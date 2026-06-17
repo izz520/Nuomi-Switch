@@ -1,0 +1,143 @@
+:root {
+  color-scheme: light;
+
+  /* ========================================
+     Colors - Base (Glass Morphism)
+     ======================================== */
+  --color-bg: oklch(0.98 0.008 250);
+  --color-canvas: oklch(0.97 0.012 240);
+  --color-surface: oklch(1 0 0 / 0.65);
+  --color-surface-raised: oklch(1 0 0 / 0.75);
+  --color-material: oklch(0.98 0.01 235 / 0.6);
+  --color-material-strong: oklch(0.99 0.005 240 / 0.8);
+  --color-control: oklch(0.965 0.009 252);
+  --color-control-hover: oklch(0.945 0.043 292);
+
+  /* Glass effect backgrounds */
+  --glass-light: oklch(1 0 0 / 0.82);
+  --glass-medium: oklch(0.99 0.005 200 / 0.85);
+  --glass-strong: oklch(0.98 0.008 200 / 0.9);
+  --glass-border: oklch(0.85 0.02 200 / 0.5);
+  --glass-border-strong: oklch(0.8 0.04 200 / 0.6);
+
+  /* ========================================
+     Colors - Text (WCAG AA compliant)
+     ======================================== */
+  --color-text-strong: oklch(0.18 0.02 220);
+  --color-text: oklch(0.28 0.03 225);
+  --color-text-muted: oklch(0.42 0.04 228);
+  --color-text-quiet: oklch(0.52 0.035 228);
+
+  /* ========================================
+     Colors - Borders
+     ======================================== */
+  --color-border: oklch(0.912 0.015 248 / 0.82);
+  --color-border-strong: oklch(0.82 0.05 260 / 0.72);
+
+  /* ========================================
+     Colors - Brand (Cyan/Teal Theme)
+     ======================================== */
+  --color-primary: oklch(0.6 0.15 195);
+  --color-primary-hover: oklch(0.65 0.14 195);
+  --color-primary-active: oklch(0.5 0.16 195);
+  --color-primary-soft: oklch(0.94 0.04 195);
+
+  /* ========================================
+     Colors - Semantic
+     ======================================== */
+  --color-blue: oklch(0.598 0.176 255);
+  --color-blue-soft: oklch(0.944 0.035 248);
+  --color-success: oklch(0.668 0.178 151);
+  --color-success-soft: oklch(0.955 0.044 151);
+  --color-warning: oklch(0.712 0.171 62);
+  --color-warning-soft: oklch(0.952 0.057 70);
+  --color-error: oklch(0.628 0.204 27);
+  --color-error-soft: oklch(0.953 0.032 27);
+
+  /* ========================================
+     Focus & Interaction
+     ======================================== */
+  --focus-ring: 0 0 0 3px oklch(0.65 0.16 265 / 0.28);
+  --focus-ring-offset: 2px;
+
+  /* ========================================
+     Typography - Font Families
+     ======================================== */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+
+  /* ========================================
+     Typography - Font Weights (Standard)
+     ======================================== */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
+  /* ========================================
+     Spacing System (4px grid)
+     ======================================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ========================================
+     Shadows (Glass Morphism)
+     ======================================== */
+  --shadow-sm: 0 2px 8px oklch(0.3 0.02 260 / 0.06), 0 1px 3px oklch(0.2 0.01 260 / 0.08);
+  --shadow-md: 0 8px 20px oklch(0.3 0.03 260 / 0.1), 0 2px 6px oklch(0.2 0.02 260 / 0.08);
+  --shadow-lg: 0 16px 40px oklch(0.3 0.03 260 / 0.14), 0 4px 12px oklch(0.2 0.02 260 / 0.1);
+  --shadow-modal: 0 28px 60px oklch(0.2 0.02 255 / 0.18), 0 8px 24px oklch(0.15 0.01 260 / 0.12);
+
+  /* Glass inner shadows */
+  --shadow-glass-inset: inset 0 1px 1px oklch(1 0 0 / 0.7), inset 0 -1px 1px oklch(0 0 0 / 0.02);
+  --shadow-glass-soft: 0 6px 20px oklch(0.5 0.04 200 / 0.1);
+
+  /* ========================================
+     Effects (Enhanced Glass)
+     ======================================== */
+  --blur-material: saturate(140%) blur(12px);
+  --blur-glass-light: saturate(130%) blur(20px);
+  --blur-glass-medium: saturate(140%) blur(14px);
+  --blur-glass-strong: saturate(150%) blur(8px);
+
+  /* ========================================
+     Border Radius (More Rounded)
+     ======================================== */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-card: 20px;
+  --radius-control: 12px;
+
+  /* ========================================
+     Transitions (Fluid)
+     ======================================== */
+  --transition-fast: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-base: 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ========================================
+     Layout
+     ======================================== */
+  --sidebar-width: 86px;
+
+  /* ========================================
+     Responsive Breakpoints
+     ======================================== */
+  --breakpoint-sm: 520px;
+  --breakpoint-md: 760px;
+  --breakpoint-lg: 920px;
+  --breakpoint-xl: 1180px;
+}

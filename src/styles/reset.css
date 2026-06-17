@@ -1,0 +1,121 @@
+/* ========================================
+   Global Reset & Base Styles
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 1040px;
+  position: relative;
+  background: oklch(0.995 0.002 200);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+.lucide {
+  flex-shrink: 0;
+  stroke-width: 1.75;
+}
+
+/* Subtle glass background tint - mostly white with faint cyan accents */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 88% 12%, oklch(0.92 0.05 195 / 0.18), transparent 38%),
+    radial-gradient(circle at 8% 88%, oklch(0.93 0.04 200 / 0.14), transparent 40%);
+  animation: backgroundFlow 24s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes backgroundFlow {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04) translate(1%, -1%);
+  }
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ========================================
+   Accessibility - Focus Styles
+   ======================================== */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+/* Specific focus styles for buttons and interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ========================================
+   Reduced Motion Support
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================================
+   Responsive Base
+   ======================================== */
+
+@media (max-width: 1180px) {
+  body {
+    min-width: 0;
+  }
+}
