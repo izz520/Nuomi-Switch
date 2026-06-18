@@ -18,7 +18,7 @@
   --color-material: oklch(0.98 0.01 235 / 0.62);
   --color-material-strong: oklch(0.99 0.005 240 / 0.82);
   --color-control: oklch(0.965 0.009 252);
-  --color-control-hover: oklch(0.945 0.043 292);
+  --color-control-hover: oklch(0.945 0.043 195);
 
   /* Glass effect backgrounds */
   --glass-light: oklch(1 0 0 / 0.82);
@@ -181,7 +181,7 @@
   --color-material: oklch(0.3 0.025 262 / 0.5);
   --color-material-strong: oklch(0.34 0.028 262 / 0.72);
   --color-control: oklch(0.34 0.028 262 / 0.55);
-  --color-control-hover: oklch(0.42 0.04 282 / 0.7);
+  --color-control-hover: oklch(0.42 0.04 195 / 0.7);
 
   /* Glass */
   --glass-light: oklch(0.34 0.026 262 / 0.7);

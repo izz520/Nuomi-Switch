@@ -96,8 +96,8 @@
 .nav-button {
   display: grid;
   place-items: center;
-  width: 50px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border-radius: var(--radius-md);
   background: transparent;
@@ -113,6 +113,16 @@
 .nav-button > .lucide {
   position: relative;
   z-index: 1;
+}
+
+.nav-icon-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  display: block;
 }
 
 .nav-button:hover:not(:disabled) {
@@ -272,8 +282,8 @@
   }
 
   .nav-button {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
   }
 
   .content {

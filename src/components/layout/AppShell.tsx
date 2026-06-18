@@ -89,7 +89,7 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
             title="账号管理"
             onClick={() => setPage('accounts')}
           >
-            <Users size={19} />
+            <img src="/chatgpt-icon.svg" alt="" className="nav-icon-img" />
           </button>
         </div>
 
