@@ -1,15 +1,22 @@
+/* ========================================
+   Design Tokens
+   Light is the default (:root). Dark overrides live in
+   :root[data-theme="dark"]. main.tsx sets data-theme before
+   first paint to avoid a flash.
+   ======================================== */
+
 :root {
   color-scheme: light;
 
   /* ========================================
      Colors - Base (Glass Morphism)
      ======================================== */
-  --color-bg: oklch(0.98 0.008 250);
-  --color-canvas: oklch(0.97 0.012 240);
-  --color-surface: oklch(1 0 0 / 0.65);
-  --color-surface-raised: oklch(1 0 0 / 0.75);
-  --color-material: oklch(0.98 0.01 235 / 0.6);
-  --color-material-strong: oklch(0.99 0.005 240 / 0.8);
+  --color-bg: oklch(0.985 0.006 240);
+  --color-canvas: oklch(0.965 0.011 240);
+  --color-surface: oklch(1 0 0 / 0.72);
+  --color-surface-raised: oklch(1 0 0 / 0.84);
+  --color-material: oklch(0.98 0.01 235 / 0.62);
+  --color-material-strong: oklch(0.99 0.005 240 / 0.82);
   --color-control: oklch(0.965 0.009 252);
   --color-control-hover: oklch(0.945 0.043 292);
 
@@ -41,6 +48,7 @@
   --color-primary-hover: oklch(0.65 0.14 195);
   --color-primary-active: oklch(0.5 0.16 195);
   --color-primary-soft: oklch(0.94 0.04 195);
+  --color-on-primary: oklch(1 0 0);
 
   /* ========================================
      Colors - Semantic
@@ -53,6 +61,22 @@
   --color-warning-soft: oklch(0.952 0.057 70);
   --color-error: oklch(0.628 0.204 27);
   --color-error-soft: oklch(0.953 0.032 27);
+
+  /* ========================================
+     Brand gradient, surfaces & helpers
+     ======================================== */
+  --gradient-brand: linear-gradient(135deg, oklch(0.66 0.15 195), oklch(0.6 0.16 212));
+  --gradient-brand-soft: linear-gradient(135deg, oklch(0.94 0.05 195), oklch(0.93 0.05 250));
+  --color-track: oklch(0.9 0.02 240);
+  --color-scrim: oklch(0.45 0.03 255 / 0.34);
+  --nav-bg: oklch(1 0 0 / 0.7);
+  --nav-border: oklch(0.9 0.018 245 / 0.7);
+  --topbar-bg: oklch(1 0 0 / 0.55);
+
+  /* App background field (consumed by reset.css) */
+  --app-bg: oklch(0.985 0.006 240);
+  --bg-glow-1: oklch(0.92 0.05 195 / 0.18);
+  --bg-glow-2: oklch(0.93 0.04 255 / 0.14);
 
   /* ========================================
      Focus & Interaction
@@ -131,7 +155,8 @@
   /* ========================================
      Layout
      ======================================== */
-  --sidebar-width: 86px;
+  --sidebar-width: 78px;
+  --topbar-height: 58px;
 
   /* ========================================
      Responsive Breakpoints
@@ -140,4 +165,80 @@
   --breakpoint-md: 760px;
   --breakpoint-lg: 920px;
   --breakpoint-xl: 1180px;
+}
+
+/* ========================================
+   Dark Theme
+   ======================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Base */
+  --color-bg: oklch(0.22 0.025 262);
+  --color-canvas: oklch(0.18 0.022 262);
+  --color-surface: oklch(0.32 0.028 262 / 0.46);
+  --color-surface-raised: oklch(0.37 0.03 262 / 0.62);
+  --color-material: oklch(0.3 0.025 262 / 0.5);
+  --color-material-strong: oklch(0.34 0.028 262 / 0.72);
+  --color-control: oklch(0.34 0.028 262 / 0.55);
+  --color-control-hover: oklch(0.42 0.04 282 / 0.7);
+
+  /* Glass */
+  --glass-light: oklch(0.34 0.026 262 / 0.7);
+  --glass-medium: oklch(0.3 0.022 262 / 0.78);
+  --glass-strong: oklch(0.27 0.02 262 / 0.85);
+  --glass-border: oklch(0.62 0.03 258 / 0.32);
+  --glass-border-strong: oklch(0.72 0.04 258 / 0.44);
+
+  /* Text */
+  --color-text-strong: oklch(0.97 0.008 240);
+  --color-text: oklch(0.9 0.014 242);
+  --color-text-muted: oklch(0.745 0.02 245);
+  --color-text-quiet: oklch(0.62 0.022 248);
+
+  /* Borders */
+  --color-border: oklch(0.56 0.025 258 / 0.3);
+  --color-border-strong: oklch(0.66 0.035 260 / 0.44);
+
+  /* Brand */
+  --color-primary: oklch(0.74 0.13 195);
+  --color-primary-hover: oklch(0.8 0.12 195);
+  --color-primary-active: oklch(0.68 0.14 195);
+  --color-primary-soft: oklch(0.44 0.07 200 / 0.42);
+  --color-on-primary: oklch(0.16 0.02 220);
+
+  /* Semantic */
+  --color-blue: oklch(0.72 0.15 255);
+  --color-blue-soft: oklch(0.46 0.08 255 / 0.4);
+  --color-success: oklch(0.76 0.16 151);
+  --color-success-soft: oklch(0.46 0.09 151 / 0.38);
+  --color-warning: oklch(0.8 0.15 75);
+  --color-warning-soft: oklch(0.5 0.09 70 / 0.38);
+  --color-error: oklch(0.71 0.18 27);
+  --color-error-soft: oklch(0.48 0.1 27 / 0.4);
+
+  /* Brand gradient, surfaces & helpers */
+  --gradient-brand: linear-gradient(135deg, oklch(0.72 0.14 195), oklch(0.68 0.15 218));
+  --gradient-brand-soft: linear-gradient(135deg, oklch(0.4 0.07 200 / 0.5), oklch(0.4 0.07 262 / 0.5));
+  --color-track: oklch(0.42 0.03 258 / 0.55);
+  --color-scrim: oklch(0.06 0.01 250 / 0.62);
+  --nav-bg: oklch(0.24 0.025 262 / 0.62);
+  --nav-border: oklch(0.5 0.025 258 / 0.3);
+  --topbar-bg: oklch(0.22 0.025 262 / 0.5);
+
+  /* App background field */
+  --app-bg: oklch(0.18 0.022 262);
+  --bg-glow-1: oklch(0.55 0.12 200 / 0.16);
+  --bg-glow-2: oklch(0.5 0.12 285 / 0.16);
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px oklch(0.72 0.14 200 / 0.4);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.3), 0 1px 3px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 8px 20px oklch(0 0 0 / 0.42), 0 2px 6px oklch(0 0 0 / 0.36);
+  --shadow-lg: 0 16px 40px oklch(0 0 0 / 0.5), 0 4px 12px oklch(0 0 0 / 0.42);
+  --shadow-modal: 0 28px 60px oklch(0 0 0 / 0.6), 0 8px 24px oklch(0 0 0 / 0.5);
+  --shadow-glass-inset: inset 0 1px 1px oklch(1 0 0 / 0.08), inset 0 -1px 1px oklch(0 0 0 / 0.22);
+  --shadow-glass-soft: 0 6px 20px oklch(0 0 0 / 0.35);
 }

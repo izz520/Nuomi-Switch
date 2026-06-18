@@ -4,18 +4,19 @@
   justify-content: center;
   gap: 9px;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: var(--radius-control);
   cursor: pointer;
   font-size: 14px;
   font-weight: var(--font-weight-bold);
   letter-spacing: 0;
   transition:
-    background var(--transition-base),
-    color var(--transition-base),
-    filter var(--transition-base),
-    transform var(--transition-base),
-    border-color var(--transition-base);
+    background var(--transition-fast),
+    color var(--transition-fast),
+    filter var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .button:disabled {
@@ -25,12 +26,10 @@
 
 .button-primary {
   min-width: 116px;
-  background: linear-gradient(135deg,
-    oklch(0.6 0.15 195),
-    oklch(0.55 0.16 200));
-  color: white;
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
   box-shadow:
-    0 8px 20px oklch(0.5 0.15 195 / 0.35),
+    0 8px 20px oklch(0.5 0.15 195 / 0.28),
     inset 0 1px 1px oklch(1 0 0 / 0.25);
   border: 1px solid oklch(0.5 0.15 195 / 0.3);
   position: relative;
@@ -42,15 +41,16 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg,
-    oklch(1 0 0 / 0.2),
+    oklch(1 0 0 / 0.22),
     transparent 50%);
   pointer-events: none;
 }
 
 .button-primary:hover:not(:disabled) {
   transform: translateY(-1px);
+  filter: brightness(1.04);
   box-shadow:
-    0 12px 28px oklch(0.5 0.15 195 / 0.4),
+    0 12px 28px oklch(0.5 0.15 195 / 0.36),
     inset 0 1px 1px oklch(1 0 0 / 0.3);
 }
 
@@ -64,11 +64,9 @@
 }
 
 .button-secondary:hover:not(:disabled) {
-  background: linear-gradient(135deg,
-    oklch(0.94 0.06 195 / 0.95),
-    oklch(0.96 0.04 200 / 0.9));
+  background: var(--color-primary-soft);
   color: var(--color-primary-active);
-  border-color: oklch(0.85 0.08 195 / 0.5);
+  border-color: var(--color-primary);
 }
 
 .button-ghost {
@@ -77,18 +75,15 @@
 }
 
 .button-ghost:hover:not(:disabled) {
-  background: var(--glass-light);
-  backdrop-filter: var(--blur-glass-strong);
-  -webkit-backdrop-filter: var(--blur-glass-strong);
+  background: var(--color-primary-soft);
   color: var(--color-primary-active);
-  box-shadow: var(--shadow-sm);
 }
 
 .button-danger {
   background: linear-gradient(135deg,
     oklch(0.65 0.21 25),
     oklch(0.6 0.22 30));
-  color: white;
+  color: oklch(1 0 0);
   box-shadow:
     0 8px 20px oklch(0.5 0.2 27 / 0.3),
     inset 0 1px 1px oklch(1 0 0 / 0.2);
@@ -97,6 +92,7 @@
 
 .button-danger:hover:not(:disabled) {
   transform: translateY(-1px);
+  filter: brightness(1.04);
   box-shadow:
     0 12px 28px oklch(0.5 0.2 27 / 0.35),
     inset 0 1px 1px oklch(1 0 0 / 0.25);
@@ -138,11 +134,11 @@
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition:
-    background var(--transition-base),
-    color var(--transition-base),
-    transform var(--transition-base),
-    border-color var(--transition-base),
-    box-shadow var(--transition-base);
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .icon-button > .lucide {
@@ -152,11 +148,9 @@
 
 .icon-button:hover:not(:disabled),
 .icon-button.active {
-  background: linear-gradient(135deg,
-    oklch(0.94 0.06 195 / 0.95),
-    oklch(0.96 0.04 200 / 0.9));
+  background: var(--color-primary-soft);
   color: var(--color-primary-active);
-  border-color: oklch(0.85 0.08 195 / 0.5);
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
 

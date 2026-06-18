@@ -4,7 +4,7 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: oklch(0.15 0.02 260 / 0.45);
+  background: var(--color-scrim);
   backdrop-filter: var(--blur-glass-light);
   -webkit-backdrop-filter: var(--blur-glass-light);
   z-index: 50;
@@ -41,9 +41,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-    oklch(1 0 0 / 0.6) 0%,
-    oklch(0.97 0.015 250 / 0.3) 100%);
+  background: linear-gradient(180deg,
+    oklch(1 0 0 / 0.12) 0%,
+    transparent 55%);
   pointer-events: none;
   border-radius: inherit;
 }

@@ -40,27 +40,21 @@
 
 .stat-icon-primary,
 .stat-icon-purple {
-  background: linear-gradient(135deg,
-    oklch(0.94 0.06 195 / 0.9),
-    oklch(0.92 0.07 200 / 0.85));
+  background: var(--color-primary-soft);
   color: var(--color-primary);
-  border: 1px solid oklch(0.85 0.08 195 / 0.3);
+  border: 1px solid var(--color-border);
 }
 
 .stat-icon-blue {
-  background: linear-gradient(135deg,
-    oklch(0.96 0.04 250 / 0.9),
-    oklch(0.94 0.05 260 / 0.85));
+  background: var(--color-blue-soft);
   color: var(--color-blue);
-  border: 1px solid oklch(0.88 0.06 255 / 0.3);
+  border: 1px solid var(--color-border);
 }
 
 .stat-icon-green {
-  background: linear-gradient(135deg,
-    oklch(0.97 0.05 155 / 0.9),
-    oklch(0.95 0.06 145 / 0.85));
+  background: var(--color-success-soft);
   color: var(--color-success);
-  border: 1px solid oklch(0.88 0.08 151 / 0.3);
+  border: 1px solid var(--color-border);
 }
 
 .stat-label {

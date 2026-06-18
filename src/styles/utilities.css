@@ -36,12 +36,12 @@
   width: min(860px, 100%);
   min-height: 0;
   padding: var(--space-6);
-  border: 1px solid oklch(0.94 0.016 255 / 0.76);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
-  box-shadow: 0 10px 26px oklch(0.5 0.05 260 / 0.08);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: var(--blur-glass-medium);
+  -webkit-backdrop-filter: var(--blur-glass-medium);
 }
 
 /* Toolbar Actions */
@@ -60,7 +60,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, oklch(0.988 0.008 252), white 76%);
+  background: var(--color-surface-raised);
 }
 
 .settings-row {
@@ -131,7 +131,7 @@
   padding: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: oklch(0.988 0.008 252 / 0.86);
+  background: var(--color-surface);
 }
 
 .log-entry span {

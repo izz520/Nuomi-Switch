@@ -15,9 +15,9 @@ body,
 }
 
 body {
-  min-width: 1040px;
+  min-width: 960px;
   position: relative;
-  background: oklch(0.995 0.002 200);
+  background: var(--app-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 14px;
@@ -25,6 +25,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+  transition: background var(--transition-base), color var(--transition-base);
 }
 
 .lucide {
@@ -32,15 +33,16 @@ body {
   stroke-width: 1.75;
 }
 
-/* Subtle glass background tint - mostly white with faint cyan accents */
+/* Ambient glass background tint - theme aware */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at 88% 12%, oklch(0.92 0.05 195 / 0.18), transparent 38%),
-    radial-gradient(circle at 8% 88%, oklch(0.93 0.04 200 / 0.14), transparent 40%);
+    radial-gradient(circle at 88% 12%, var(--bg-glow-1), transparent 40%),
+    radial-gradient(circle at 8% 88%, var(--bg-glow-2), transparent 42%);
   animation: backgroundFlow 24s ease-in-out infinite;
+  transition: background var(--transition-slow);
   z-index: -1;
 }
 
@@ -93,6 +95,35 @@ select:focus-visible,
 [role="tab"]:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: var(--focus-ring-offset);
+}
+
+/* ========================================
+   Custom Scrollbar (theme aware)
+   ======================================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: var(--color-border-strong);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-quiet);
 }
 
 /* ========================================

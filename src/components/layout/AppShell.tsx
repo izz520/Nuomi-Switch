@@ -1,6 +1,17 @@
-import { FileText, MessageCircle, Settings, SquareTerminal, Users } from 'lucide-react';
+import {
+  FileText,
+  type LucideIcon,
+  Monitor,
+  Moon,
+  MessagesSquare,
+  Settings,
+  SquareTerminal,
+  Sun,
+  Users,
+} from 'lucide-react';
 import { type PointerEvent, type ReactNode } from 'react';
 import { startWindowDragging } from '../../services/windowService';
+import { type ThemePreference, useThemeStore } from '../../stores/useThemeStore';
 
 type Page = 'accounts' | 'sessions' | 'settings' | 'logs';
 
@@ -8,6 +19,41 @@ interface AppShellProps {
   page: Page;
   setPage: (page: Page) => void;
   children: ReactNode;
+}
+
+const PAGE_META: Record<Page, { title: string; icon: LucideIcon }> = {
+  accounts: { title: '账号管理', icon: Users },
+  sessions: { title: '会话管理', icon: MessagesSquare },
+  settings: { title: '设置', icon: Settings },
+  logs: { title: '日志', icon: FileText },
+};
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: LucideIcon }[] = [
+  { value: 'light', label: '浅色', icon: Sun },
+  { value: 'auto', label: '跟随系统', icon: Monitor },
+  { value: 'dark', label: '深色', icon: Moon },
+];
+
+function ThemeToggle() {
+  const preference = useThemeStore((state) => state.preference);
+  const setPreference = useThemeStore((state) => state.setPreference);
+
+  return (
+    <div className="theme-toggle" role="group" aria-label="主题切换">
+      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+        <button
+          key={value}
+          type="button"
+          className={`theme-toggle-option ${preference === value ? 'active' : ''}`}
+          aria-pressed={preference === value}
+          title={label}
+          onClick={() => setPreference(value)}
+        >
+          <Icon size={15} />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function AppShell({ page, setPage, children }: AppShellProps) {
@@ -19,56 +65,52 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
     void startWindowDragging();
   };
 
-  const getPageTitle = () => {
-    switch (page) {
-      case 'accounts':
-      case 'sessions':
-        return 'AI Accounts';
-      case 'settings':
-        return '设置';
-      case 'logs':
-        return '日志';
-      default:
-        return 'AI Accounts';
-    }
+  const stopDrag = (event: PointerEvent<HTMLElement>) => {
+    event.stopPropagation();
   };
+
+  const isAccountsArea = page === 'accounts' || page === 'sessions';
+  const TitleIcon = PAGE_META[page].icon;
 
   return (
     <div className="app-shell">
       <nav className="app-nav" aria-label="Primary">
         <div className="app-brand">
           <div className="app-logo" aria-hidden="true">
-            <SquareTerminal size={19} />
+            <SquareTerminal size={20} />
           </div>
         </div>
 
         <div className="nav-section">
           <button
-            className={`nav-button nav-button-accounts ${page === 'accounts' || page === 'sessions' ? 'active' : ''}`}
-            aria-label="Accounts"
-            title="Accounts"
+            className={`nav-button ${isAccountsArea ? 'active' : ''}`}
+            aria-label="账号管理"
+            aria-current={isAccountsArea ? 'page' : undefined}
+            title="账号管理"
             onClick={() => setPage('accounts')}
           >
-            <Users size={18} />
+            <Users size={19} />
           </button>
         </div>
 
         <div className="nav-footer">
           <button
             className={`nav-button ${page === 'logs' ? 'active' : ''}`}
-            aria-label="Logs"
-            title="Logs"
+            aria-label="日志"
+            aria-current={page === 'logs' ? 'page' : undefined}
+            title="日志"
             onClick={() => setPage('logs')}
           >
-            <FileText size={18} />
+            <FileText size={19} />
           </button>
           <button
             className={`nav-button ${page === 'settings' ? 'active' : ''}`}
-            aria-label="Settings"
-            title="Settings"
+            aria-label="设置"
+            aria-current={page === 'settings' ? 'page' : undefined}
+            title="设置"
             onClick={() => setPage('settings')}
           >
-            <Settings size={18} />
+            <Settings size={19} />
           </button>
         </div>
       </nav>
@@ -76,8 +118,13 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
         <header className="topbar" data-tauri-drag-region onPointerDown={handleTopbarPointerDown}>
           <div className="topbar-content">
             <div className="topbar-title-group">
-              <MessageCircle size={16} aria-hidden="true" />
-              <h1 className="page-title">{getPageTitle()}</h1>
+              <span className="topbar-title-icon" aria-hidden="true">
+                <TitleIcon size={16} />
+              </span>
+              <h1 className="page-title">{PAGE_META[page].title}</h1>
+            </div>
+            <div className="topbar-actions" onPointerDown={stopDrag}>
+              <ThemeToggle />
             </div>
           </div>
         </header>

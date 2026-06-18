@@ -48,21 +48,17 @@
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: linear-gradient(135deg,
-    oklch(0.94 0.06 195 / 0.9),
-    oklch(0.92 0.07 200 / 0.85));
+  background: var(--color-primary-soft);
   color: var(--color-primary-active);
   font-size: 12px;
   font-weight: var(--font-weight-extrabold);
   line-height: 1;
-  border: 1px solid oklch(0.85 0.08 195 / 0.2);
+  border: 1px solid var(--color-border);
 }
 
 .tab-active .tab-count {
-  background: linear-gradient(135deg,
-    oklch(0.6 0.15 195),
-    oklch(0.55 0.16 200));
-  color: white;
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
   border-color: transparent;
   box-shadow: 0 2px 6px oklch(0.5 0.15 195 / 0.3);
 }
