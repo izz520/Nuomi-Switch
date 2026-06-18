@@ -1,7 +1,7 @@
 .sessions-content {
   background:
-    radial-gradient(circle at 36% 10%, oklch(0.965 0.03 218 / 0.36), transparent 34%),
-    radial-gradient(circle at 88% 18%, oklch(0.94 0.048 285 / 0.28), transparent 28%);
+    radial-gradient(circle at 36% 10%, var(--bg-glow-1), transparent 36%),
+    radial-gradient(circle at 88% 18%, var(--bg-glow-2), transparent 30%);
 }
 
 .sessions-dashboard {
@@ -22,7 +22,7 @@
   gap: 2px;
   min-height: 68px;
   padding: 12px 16px;
-  border: 1px solid oklch(0.94 0.016 255 / 0.76);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
 }
@@ -57,11 +57,12 @@
   min-width: 280px;
   height: 38px;
   padding: 0 11px;
-  border: 1px solid oklch(0.91 0.013 252);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: oklch(1 0 0 / 0.74);
+  background: var(--color-surface);
   color: var(--color-text-muted);
   box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .session-search input {
@@ -75,6 +76,7 @@
 }
 
 .session-search:focus-within {
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
@@ -92,7 +94,7 @@
 
 .session-group {
   overflow: hidden;
-  border: 1px solid oklch(0.94 0.016 255 / 0.76);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
 }
@@ -104,8 +106,8 @@
   gap: 14px;
   min-height: 64px;
   padding: 12px 14px;
-  border-bottom: 1px solid oklch(0.92 0.015 248 / 0.72);
-  background: oklch(0.99 0.006 245 / 0.78);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .session-group-toggle {
@@ -177,7 +179,7 @@
   height: 24px;
   padding: 3px 9px;
   border-radius: 999px;
-  background: oklch(0.965 0.012 245);
+  background: var(--color-control);
 }
 
 .session-group-meta .session-group-selected-count {
@@ -218,7 +220,7 @@
 .sessions-table th,
 .sessions-table td {
   padding: 11px 14px;
-  border-bottom: 1px solid oklch(0.92 0.015 248 / 0.72);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
 }
@@ -228,7 +230,7 @@
   font-size: 12px;
   font-weight: var(--font-weight-extrabold);
   line-height: 16px;
-  background: oklch(0.988 0.005 245 / 0.8);
+  background: var(--color-surface-raised);
 }
 
 .sessions-table tbody tr {
@@ -237,7 +239,7 @@
 
 .sessions-table tbody tr:hover,
 .sessions-table tbody tr.selected {
-  background: oklch(0.958 0.029 275 / 0.54);
+  background: var(--color-primary-soft);
 }
 
 .sessions-table tbody tr:last-child td {
@@ -303,7 +305,7 @@
 
 .session-status.hidden {
   background: var(--color-warning-soft);
-  color: oklch(0.46 0.12 62);
+  color: var(--color-warning);
 }
 
 .session-status-stack {
@@ -344,7 +346,7 @@
   display: grid;
   place-items: center;
   min-height: 150px;
-  border: 1px solid oklch(0.94 0.016 255 / 0.76);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
   color: var(--color-text-muted);

@@ -1,7 +1,7 @@
 .accounts-content {
   background:
-    radial-gradient(circle at 42% 8%, oklch(0.965 0.03 218 / 0.42), transparent 36%),
-    radial-gradient(circle at 92% 10%, oklch(0.94 0.048 285 / 0.34), transparent 26%);
+    radial-gradient(circle at 42% 8%, var(--bg-glow-1), transparent 38%),
+    radial-gradient(circle at 92% 10%, var(--bg-glow-2), transparent 28%);
 }
 
 .accounts-dashboard {
@@ -13,10 +13,10 @@
 
 .account-switch-notice {
   padding: 10px var(--space-3);
-  border: 1px solid oklch(0.82 0.08 155);
+  border: 1px solid color-mix(in oklch, var(--color-success) 38%, transparent);
   border-radius: var(--radius-control);
-  background: oklch(0.96 0.045 155);
-  color: oklch(0.32 0.09 155);
+  background: var(--color-success-soft);
+  color: var(--color-success);
   font-size: 13px;
   font-weight: var(--font-weight-bold);
   line-height: 18px;

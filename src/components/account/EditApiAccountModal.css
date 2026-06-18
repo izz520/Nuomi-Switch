@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: oklch(0.22 0.02 255 / 0.24);
+  background: var(--color-scrim);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -15,7 +15,7 @@
   gap: 16px;
   width: min(460px, calc(100vw - 48px));
   padding: 24px;
-  border: 1px solid oklch(0.94 0.016 255 / 0.76);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-material-strong);
   box-shadow: var(--shadow-modal);
@@ -72,14 +72,20 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   outline: 0;
-  background: oklch(1 0 0 / 0.76);
+  background: var(--color-surface);
   color: var(--color-text-strong);
   font: inherit;
   font-size: 13px;
   font-weight: 680;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.api-edit-fields input::placeholder {
+  color: var(--color-text-quiet);
 }
 
 .api-edit-fields input:focus {
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
