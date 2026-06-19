@@ -12,8 +12,19 @@ export interface CodexQuotaView {
   hourlyResetAt?: number | null;
   weeklyRemainingPercent?: number | null;
   weeklyResetAt?: number | null;
+  resetCredits?: CodexResetCreditsView | null;
   updatedAt?: number | null;
   stale: boolean;
+}
+
+export interface CodexResetCreditView {
+  expiresAt?: number | null;
+}
+
+export interface CodexResetCreditsView {
+  total: number;
+  credits: CodexResetCreditView[];
+  updatedAt?: number | null;
 }
 
 export interface CodexAccountView {

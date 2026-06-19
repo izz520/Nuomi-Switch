@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Clock3, Copy, Eye, KeyRound, Link, Link2, Pencil, Play, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Clock3, Copy, Eye, KeyRound, Link, Link2, Pencil, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { isOAuthAuthMode, type CodexAccountView } from '../../types/codex';
 import type { AppError } from '../../types/system';
@@ -58,6 +58,14 @@ function formatQuotaLabel(value?: number | null): string {
     return '-';
   }
   return `${Math.max(0, Math.min(100, value))}%`;
+}
+
+function formatResetCreditExpiry(value?: number | null): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '有效期未知';
+  }
+  const timestamp = value > 10_000_000_000 ? value : value * 1000;
+  return new Date(timestamp).toLocaleString();
 }
 
 function getPlanTone(planType?: string | null): string {
@@ -151,6 +159,18 @@ export function AccountRow({
   const expiresAt = account.subscriptionActiveUntil ?? null;
   const validityDays = formatRemainingDays(expiresAt);
   const expiresAtText = formatExpiry(expiresAt) ?? '未获取到期时间';
+  const resetCredits = account.quota?.resetCredits ?? null;
+  const resetCreditTotal = resetCredits ? Math.max(resetCredits.total, resetCredits.credits.length, 0) : null;
+  const resetCreditPreview = resetCredits?.credits.slice(0, 2) ?? [];
+  const hiddenResetCreditCount =
+    resetCreditPreview.length > 0 && resetCreditTotal !== null
+      ? Math.max(0, resetCreditTotal - resetCreditPreview.length)
+      : 0;
+  const resetCreditEmptyText = !resetCredits
+    ? '刷新后显示'
+    : resetCreditTotal === 0
+      ? '无可用机会'
+      : '有效期未返回';
 
   async function copyField(field: 'apiKey' | 'apiBaseUrl', value: string) {
     if (!value) {
@@ -168,7 +188,12 @@ export function AccountRow({
           <strong>{account.email ?? account.displayName}</strong>
           <span className={`account-plan-badge account-plan-${planTone}`}>{planText}</span>
         </span>
-        {!quotaUnsupported ? <span className="account-card-name">{account.displayName}</span> : null}
+        {!quotaUnsupported ? (
+          <span className="account-card-name">
+            <span>{account.displayName}</span>
+            {account.accountId ? <code>{account.accountId}</code> : null}
+          </span>
+        ) : null}
 
         {quotaUnsupported ? (
           <>
@@ -242,7 +267,7 @@ export function AccountRow({
                 ) : null}
               </div>
             ) : (
-              <span className="quota-lines" aria-hidden="true">
+              <span className="quota-lines">
                 <span className="quota-line">
                   <span>
                     <Clock3 size={16} />
@@ -262,6 +287,29 @@ export function AccountRow({
                 </span>
                 <span className="quota-track">
                   <span style={{ width: `${quotaUnsupported ? 100 : normalizedWeekly}%` }} />
+                </span>
+                <span className="reset-credit-lines">
+                  <span className="reset-credit-heading">
+                    <span>
+                      <RotateCcw size={14} />
+                      重置机会
+                    </span>
+                    <strong>{resetCreditTotal === null ? '-' : `${resetCreditTotal} 次`}</strong>
+                  </span>
+                  {resetCreditPreview.length > 0 ? (
+                    <span className="reset-credit-expiries">
+                      {resetCreditPreview.map((credit, index) => (
+                        <span key={`${credit.expiresAt ?? 'unknown'}-${index}`}>
+                          {index + 1}. {formatResetCreditExpiry(credit.expiresAt)}
+                        </span>
+                      ))}
+                      {hiddenResetCreditCount > 0 ? <span>另 {hiddenResetCreditCount} 次</span> : null}
+                    </span>
+                  ) : (
+                    <span className="reset-credit-expiries muted">
+                      <span>{resetCreditEmptyText}</span>
+                    </span>
+                  )}
                 </span>
               </span>
             )}

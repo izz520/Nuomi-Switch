@@ -19,6 +19,14 @@ const oauthAccount = {
     hourlyResetAt: 1_800_000_000,
     weeklyRemainingPercent: 64,
     weeklyResetAt: 1_800_086_400,
+    resetCredits: {
+      total: 2,
+      credits: [
+        { expiresAt: 1_800_000_000 },
+        { expiresAt: 1_800_086_400 },
+      ],
+      updatedAt: 1_799_990_000,
+    },
     updatedAt: 1_799_990_000,
     stale: false,
   },
@@ -132,6 +140,8 @@ test.describe('Accounts page smoke', () => {
     // The current account starts expanded, so its detail quota is visible.
     await expect(oauthRow.getByText('5h')).toBeVisible();
     await expect(oauthRow.getByText('Weekly')).toBeVisible();
+    await expect(oauthRow.getByText('重置机会')).toBeVisible();
+    await expect(oauthRow.getByText('2 次')).toBeVisible();
     await expect(oauthRow.getByText('acct_team_codex_lite_smoke_long_identifier_001')).toBeVisible();
 
     await apiKeyRow.locator('.account-summary').click();

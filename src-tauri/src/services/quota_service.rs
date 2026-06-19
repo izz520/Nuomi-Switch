@@ -3,11 +3,15 @@ use reqwest::Url;
 use serde::Deserialize;
 
 use crate::infra::storage;
-use crate::models::account::{CodexAccount, CodexAccountView, CodexAuthMode, CodexQuotaView};
+use crate::models::account::{
+    CodexAccount, CodexAccountView, CodexAuthMode, CodexQuotaView, CodexResetCreditView,
+    CodexResetCreditsView,
+};
 use crate::models::error::{AppError, AppResult};
 use crate::services::auth_file_service;
 
 const USAGE_URL: &str = "https://chatgpt.com/backend-api/wham/usage";
+const RESET_CREDITS_URL: &str = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits";
 const SUBSCRIPTION_ACCOUNTS_CHECK_URL: &str =
     "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27";
 const SUBSCRIPTIONS_URL: &str = "https://chatgpt.com/backend-api/subscriptions";
@@ -397,11 +401,208 @@ fn parse_quota(body: &str) -> AppResult<(CodexQuotaView, Option<String>)> {
             hourly_reset_at: primary.and_then(normalize_reset_at),
             weekly_remaining_percent: secondary.map(normalize_remaining_percent),
             weekly_reset_at: secondary.and_then(normalize_reset_at),
+            reset_credits: None,
             updated_at: Some(now_timestamp()),
             stale: false,
         },
         trim_optional(usage.plan_type),
     ))
+}
+
+fn normalize_timestamp(raw: i64) -> Option<i64> {
+    if raw < 0 {
+        return None;
+    }
+    Some(if raw > 10_000_000_000 {
+        raw / 1000
+    } else {
+        raw
+    })
+}
+
+fn timestamp_value(value: &serde_json::Value) -> Option<i64> {
+    match value {
+        serde_json::Value::Number(number) => number
+            .as_i64()
+            .or_else(|| number.as_u64().and_then(|item| i64::try_from(item).ok()))
+            .or_else(|| number.as_f64().map(|item| item.round() as i64))
+            .and_then(normalize_timestamp),
+        serde_json::Value::String(text) => parse_subscription_timestamp(text),
+        _ => None,
+    }
+}
+
+fn u32_value(value: &serde_json::Value) -> Option<u32> {
+    match value {
+        serde_json::Value::Number(number) => number
+            .as_u64()
+            .and_then(|item| u32::try_from(item).ok())
+            .or_else(|| number.as_i64().and_then(|item| u32::try_from(item).ok())),
+        serde_json::Value::String(text) => text.trim().parse::<u32>().ok(),
+        _ => None,
+    }
+}
+
+fn read_u32_path(value: &serde_json::Value, keys: &[&str]) -> Option<u32> {
+    string_value_at(value, keys).and_then(u32_value)
+}
+
+fn read_reset_credit_total(value: &serde_json::Value) -> Option<u32> {
+    let paths: &[&[&str]] = &[
+        &["total"],
+        &["count"],
+        &["available"],
+        &["remaining"],
+        &["available_count"],
+        &["availableCount"],
+        &["remaining_credits"],
+        &["remainingCredits"],
+        &["total_available"],
+        &["totalAvailable"],
+        &["num_credits"],
+        &["numCredits"],
+        &["data", "total"],
+        &["data", "count"],
+        &["data", "available"],
+        &["data", "remaining"],
+        &["data", "reset_credits", "total"],
+        &["data", "reset_credits", "count"],
+        &["data", "resetCredits", "total"],
+        &["data", "resetCredits", "count"],
+        &["reset_credits", "total"],
+        &["reset_credits", "count"],
+        &["resetCredits", "total"],
+        &["resetCredits", "count"],
+    ];
+
+    paths.iter().find_map(|path| read_u32_path(value, path))
+}
+
+fn collect_reset_credit_values(value: &serde_json::Value) -> Vec<&serde_json::Value> {
+    if let Some(items) = value.as_array() {
+        return items.iter().collect();
+    }
+
+    let paths: &[&[&str]] = &[
+        &["credits"],
+        &["items"],
+        &["reset_credits", "credits"],
+        &["reset_credits", "items"],
+        &["resetCredits", "credits"],
+        &["resetCredits", "items"],
+        &["rate_limit_reset_credits"],
+        &["rateLimitResetCredits"],
+        &["data", "credits"],
+        &["data", "items"],
+        &["data", "reset_credits"],
+        &["data", "resetCredits"],
+        &["data"],
+        &["reset_credits"],
+        &["resetCredits"],
+    ];
+
+    for path in paths {
+        let Some(candidate) = string_value_at(value, path) else {
+            continue;
+        };
+        if let Some(items) = candidate.as_array() {
+            return items.iter().collect();
+        }
+        if let Some(items) = candidate.as_object() {
+            let aggregate_keys = [
+                "total",
+                "count",
+                "available",
+                "remaining",
+                "available_count",
+                "availableCount",
+                "remaining_credits",
+                "remainingCredits",
+                "total_available",
+                "totalAvailable",
+                "num_credits",
+                "numCredits",
+                "credits",
+                "items",
+                "reset_credits",
+                "resetCredits",
+                "rate_limit_reset_credits",
+                "rateLimitResetCredits",
+            ];
+            if aggregate_keys.iter().any(|key| items.contains_key(*key)) {
+                continue;
+            }
+            let records = items
+                .values()
+                .filter(|item| item.is_object() || item.is_string() || item.is_number())
+                .collect::<Vec<_>>();
+            if !records.is_empty() {
+                return records;
+            }
+        }
+    }
+
+    Vec::new()
+}
+
+fn reset_credit_expires_at(value: &serde_json::Value) -> Option<i64> {
+    timestamp_value(value).or_else(|| {
+        let paths: &[&[&str]] = &[
+            &["expires_at"],
+            &["expiresAt"],
+            &["expiry"],
+            &["expires"],
+            &["expire_at"],
+            &["expireAt"],
+            &["valid_until"],
+            &["validUntil"],
+            &["valid_through"],
+            &["validThrough"],
+            &["expiration_time"],
+            &["expirationTime"],
+            &["credit", "expires_at"],
+            &["credit", "expiresAt"],
+        ];
+
+        paths
+            .iter()
+            .find_map(|path| string_value_at(value, path).and_then(timestamp_value))
+    })
+}
+
+fn parse_reset_credits(body: &str) -> AppResult<CodexResetCreditsView> {
+    let value: serde_json::Value = serde_json::from_str(body).map_err(|err| {
+        AppError::new(
+            "CODEX_RESET_CREDITS_INVALID_RESPONSE",
+            format!("Reset credits response is not valid JSON: {}", err),
+            "Retry later. If it keeps failing, the upstream response shape may have changed.",
+        )
+    })?;
+
+    let total = read_reset_credit_total(&value);
+    let credits = collect_reset_credit_values(&value)
+        .into_iter()
+        .map(|item| CodexResetCreditView {
+            expires_at: reset_credit_expires_at(item),
+        })
+        .collect::<Vec<_>>();
+
+    let empty_success = value.is_null()
+        || value.as_array().is_some_and(|items| items.is_empty())
+        || value.as_object().is_some_and(|items| items.is_empty());
+    if total.is_none() && credits.is_empty() && !empty_success {
+        return Err(AppError::new(
+            "CODEX_RESET_CREDITS_INVALID_RESPONSE",
+            "Reset credits response did not include a count or credit list.",
+            "Retry later. If it keeps failing, the upstream response shape may have changed.",
+        ));
+    }
+
+    Ok(CodexResetCreditsView {
+        total: total.unwrap_or_else(|| credits.len() as u32),
+        credits,
+        updated_at: Some(now_timestamp()),
+    })
 }
 
 fn build_headers(account: &CodexAccount) -> AppResult<HeaderMap> {
@@ -445,6 +646,13 @@ fn build_headers(account: &CodexAccount) -> AppResult<HeaderMap> {
         );
     }
 
+    Ok(headers)
+}
+
+fn build_reset_credit_headers(account: &CodexAccount) -> AppResult<HeaderMap> {
+    let mut headers = build_headers(account)?;
+    headers.insert("OpenAI-Beta", HeaderValue::from_static("codex-1"));
+    headers.insert("originator", HeaderValue::from_static("Codex Desktop"));
     Ok(headers)
 }
 
@@ -499,6 +707,46 @@ async fn fetch_quota(account: &CodexAccount) -> AppResult<(CodexQuotaView, Optio
     }
 
     parse_quota(&body)
+}
+
+async fn fetch_reset_credits(account: &CodexAccount) -> AppResult<CodexResetCreditsView> {
+    if account.auth_mode != CodexAuthMode::OAuth {
+        return Err(AppError::new(
+            "CODEX_RESET_CREDITS_UNSUPPORTED_AUTH_MODE",
+            "API Key accounts do not support Codex reset credit checks in this version.",
+            "Use an OAuth account for reset credit refresh.",
+        ));
+    }
+
+    let client = reqwest::Client::new();
+    let response = client
+        .get(RESET_CREDITS_URL)
+        .headers(build_reset_credit_headers(account)?)
+        .send()
+        .await
+        .map_err(|err| {
+            quota_error(
+                "CODEX_RESET_CREDITS_NETWORK_FAILED",
+                format!("Reset credits request failed: {}", err),
+                "Check network connectivity and retry.",
+                true,
+            )
+        })?;
+    let status = response.status();
+    let body = response.text().await.map_err(|err| {
+        quota_error(
+            "CODEX_RESET_CREDITS_READ_FAILED",
+            format!("Failed to read reset credits response: {}", err),
+            "Retry quota refresh.",
+            true,
+        )
+    })?;
+
+    if !status.is_success() {
+        return Err(classify_http_error(status, &body));
+    }
+
+    parse_reset_credits(&body)
 }
 
 async fn fetch_subscription_account_check(
@@ -646,6 +894,23 @@ async fn sync_subscription_status(account: &mut CodexAccount) {
     }
 }
 
+async fn sync_reset_credits(account: &mut CodexAccount) {
+    match fetch_reset_credits(account).await {
+        Ok(reset_credits) => {
+            if let Some(quota) = account.quota.as_mut() {
+                quota.reset_credits = Some(reset_credits);
+            }
+        }
+        Err(error) => {
+            tracing::warn!(
+                code = error.code,
+                message = error.message,
+                "failed to refresh Codex reset credits"
+            );
+        }
+    }
+}
+
 fn mark_existing_quota_stale(account: &mut CodexAccount) {
     if let Some(quota) = account.quota.as_mut() {
         quota.stale = true;
@@ -674,13 +939,18 @@ pub async fn refresh_quota(account_id: String) -> AppResult<CodexAccountView> {
     let mut account = file.accounts[account_index].clone();
 
     match fetch_quota(&account).await {
-        Ok((quota, plan_type)) => {
+        Ok((mut quota, plan_type)) => {
+            quota.reset_credits = account
+                .quota
+                .as_ref()
+                .and_then(|existing| existing.reset_credits.clone());
             account.quota = Some(quota);
             account.quota_error = None;
             if plan_type.is_some() {
                 account.plan_type = plan_type;
             }
             sync_subscription_status(&mut account).await;
+            sync_reset_credits(&mut account).await;
             account.updated_at = now_timestamp();
             file.accounts[account_index] = account;
             let updated_account = file.accounts[account_index].to_view(
@@ -723,7 +993,9 @@ pub async fn refresh_all_quotas() -> AppResult<Vec<CodexAccountView>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_http_error, parse_quota, record_quota_refresh_error};
+    use super::{
+        classify_http_error, parse_quota, parse_reset_credits, record_quota_refresh_error,
+    };
     use crate::models::account::{CodexAccount, CodexAuthMode, CodexQuotaView};
     use crate::models::error::AppError;
     use reqwest::StatusCode;
@@ -751,7 +1023,43 @@ mod tests {
         assert!(quota.hourly_reset_at.is_some());
         assert_eq!(quota.weekly_remaining_percent, Some(0));
         assert_eq!(quota.weekly_reset_at, Some(1710000000));
+        assert!(quota.reset_credits.is_none());
         assert_eq!(quota.stale, false);
+    }
+
+    #[test]
+    fn parses_reset_credits_response_with_expiries() {
+        let body = r#"{
+          "total_available": 2,
+          "credits": [
+            { "expires_at": 1800000000 },
+            { "expiresAt": "2027-01-16T08:00:00Z" }
+          ]
+        }"#;
+
+        let reset_credits = parse_reset_credits(body).expect("Reset credits body should parse");
+
+        assert_eq!(reset_credits.total, 2);
+        assert_eq!(reset_credits.credits.len(), 2);
+        assert_eq!(reset_credits.credits[0].expires_at, Some(1_800_000_000));
+        assert_eq!(reset_credits.credits[1].expires_at, Some(1_800_086_400));
+        assert!(reset_credits.updated_at.is_some());
+    }
+
+    #[test]
+    fn parses_wrapped_reset_credits_count_without_expiries() {
+        let body = r#"{
+          "data": {
+            "resetCredits": {
+              "count": "3"
+            }
+          }
+        }"#;
+
+        let reset_credits = parse_reset_credits(body).expect("Wrapped count should parse");
+
+        assert_eq!(reset_credits.total, 3);
+        assert!(reset_credits.credits.is_empty());
     }
 
     #[test]
@@ -810,6 +1118,7 @@ mod tests {
                 hourly_reset_at: Some(1_800_000_000),
                 weekly_remaining_percent: Some(84),
                 weekly_reset_at: Some(1_800_086_400),
+                reset_credits: None,
                 updated_at: Some(1_799_900_000),
                 stale: false,
             }),

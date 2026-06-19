@@ -20,11 +20,27 @@ pub struct TokenBundle {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CodexResetCreditView {
+    pub expires_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexResetCreditsView {
+    pub total: u32,
+    pub credits: Vec<CodexResetCreditView>,
+    pub updated_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CodexQuotaView {
     pub hourly_remaining_percent: Option<i32>,
     pub hourly_reset_at: Option<i64>,
     pub weekly_remaining_percent: Option<i32>,
     pub weekly_reset_at: Option<i64>,
+    #[serde(default)]
+    pub reset_credits: Option<CodexResetCreditsView>,
     pub updated_at: Option<i64>,
     pub stale: bool,
 }
