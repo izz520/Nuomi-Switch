@@ -13,6 +13,10 @@ export function switchCodexAccount(accountId: string): Promise<SwitchResult> {
   return invokeCommand('switch_codex_account', { accountId });
 }
 
+export function resetCodexProviderConfig(): Promise<void> {
+  return invokeCommand('reset_codex_provider_config');
+}
+
 export function refreshCodexQuota(accountId: string): Promise<CodexAccountView> {
   return invokeCommand('refresh_codex_quota', { accountId });
 }

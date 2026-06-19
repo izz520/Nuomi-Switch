@@ -1,6 +1,7 @@
 use crate::models::account::{CodexAccountView, SwitchResult};
 use crate::models::error::AppResult;
-use crate::services::{account_service, switch_service};
+use crate::infra::paths;
+use crate::services::{account_service, codex_config_service, switch_service};
 
 #[tauri::command]
 pub fn list_codex_accounts() -> AppResult<Vec<CodexAccountView>> {
@@ -38,4 +39,10 @@ pub async fn update_codex_api_key_bound_oauth_account(
 #[tauri::command]
 pub async fn switch_codex_account(account_id: String) -> AppResult<SwitchResult> {
     switch_service::switch_account(account_id).await
+}
+
+#[tauri::command]
+pub fn reset_codex_provider_config() -> AppResult<()> {
+    let config_path = paths::default_codex_config_file()?;
+    codex_config_service::reset_provider_config(&config_path)
 }

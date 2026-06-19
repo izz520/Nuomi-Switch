@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { AppShell } from './components/layout/AppShell';
+import { AccountResetSettingsPage } from './pages/AccountResetSettingsPage';
 import { AccountsPage } from './pages/AccountsPage';
 import { SessionsPage } from './pages/SessionsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LogsPage } from './pages/LogsPage';
 import { Tabs, type Tab } from './components/ui/Tabs/Tabs';
-import { Users, History } from 'lucide-react';
+import { Users, History, RotateCcw } from 'lucide-react';
 import { useCodexAccountsStore } from './stores/useCodexAccountsStore';
 import { useCodexSessionsStore } from './stores/useCodexSessionsStore';
 
 type Page = 'accounts' | 'sessions' | 'settings' | 'logs';
-type AccountTab = 'accounts' | 'sessions';
+type AccountTab = 'accounts' | 'sessions' | 'reset';
 
 export function App() {
   const [page, setPage] = useState<Page>('accounts');
@@ -31,6 +32,11 @@ export function App() {
       icon: <History size={16} />,
       count: sessions.length,
     },
+    {
+      id: 'reset',
+      label: '重置设置',
+      icon: <RotateCcw size={16} />,
+    },
   ];
 
   return (
@@ -43,8 +49,10 @@ export function App() {
             </div>
             {accountTab === 'accounts' ? (
               <AccountsPage onOpenSessions={() => setAccountTab('sessions')} />
-            ) : (
+            ) : accountTab === 'sessions' ? (
               <SessionsPage onBack={() => setAccountTab('accounts')} />
+            ) : (
+              <AccountResetSettingsPage />
             )}
           </section>
         </div>

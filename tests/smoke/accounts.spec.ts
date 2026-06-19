@@ -73,6 +73,9 @@ async function installTauriMock(page: Page, options: TauriMockOptions): Promise<
           if (command === 'delete_codex_account') {
             return null;
           }
+          if (command === 'reset_codex_provider_config') {
+            return null;
+          }
           throw {
             code: 'SMOKE_UNKNOWN_COMMAND',
             message: `Unhandled smoke command: ${command}`,
@@ -177,6 +180,27 @@ test.describe('Accounts page smoke', () => {
 
     await expect(page.locator('.account-row').filter({ hasText: 'API Key Only' })).toHaveCount(0);
     await expect(page.locator('.account-row').filter({ hasText: 'Work Codex OAuth' })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('resets provider settings after a confirmation dialog', async ({ page }) => {
+    await installTauriMock(page, {
+      accounts: [oauthAccount, apiKeyAccount],
+      currentAccount: oauthAccount,
+    });
+
+    await page.goto('/');
+    await page.getByRole('tab', { name: '重置设置' }).click();
+
+    await expect(page.getByText('重置codex的默认设置')).toBeVisible();
+    await page.getByRole('button', { name: '重置设置' }).click();
+
+    const dialog = page.getByRole('dialog', { name: '确认重置设置？' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: '确认重置' }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText('Codex 默认设置已重置')).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 

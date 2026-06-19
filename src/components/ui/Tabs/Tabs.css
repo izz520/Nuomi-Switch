@@ -1,5 +1,6 @@
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   padding: 4px;
   border-radius: var(--radius-lg);
@@ -7,6 +8,7 @@
   backdrop-filter: var(--blur-glass-strong);
   -webkit-backdrop-filter: var(--blur-glass-strong);
   width: fit-content;
+  max-width: 100%;
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-sm);
 }
@@ -22,6 +24,7 @@
   color: var(--color-text-muted);
   font-weight: var(--font-weight-bold);
   font-size: 14px;
+  min-width: 0;
   transition: all var(--transition-base);
   cursor: pointer;
   position: relative;
@@ -61,4 +64,15 @@
   color: var(--color-on-primary);
   border-color: transparent;
   box-shadow: 0 2px 6px oklch(0.5 0.15 195 / 0.3);
+}
+
+@media (max-width: 520px) {
+  .tabs {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1 1 128px;
+    justify-content: center;
+  }
 }

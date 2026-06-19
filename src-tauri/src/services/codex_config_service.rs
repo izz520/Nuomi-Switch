@@ -61,6 +61,13 @@ pub fn apply_account_config_with_provider_base_url(
     atomic_write::write_atomic(config_path, next.as_bytes())
 }
 
+pub fn reset_provider_config(config_path: &Path) -> AppResult<()> {
+    let content = read_optional_config(config_path)?;
+    let next = clear_active_provider(&content);
+
+    atomic_write::write_atomic(config_path, next.as_bytes())
+}
+
 pub fn read_active_provider(config_path: &Path) -> AppResult<String> {
     let content = read_optional_config(config_path)?;
     let (prelude, _) = split_prelude(&content);
@@ -339,8 +346,9 @@ fn ensure_leading_newline(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_api_provider, clear_active_provider};
+    use super::{apply_api_provider, clear_active_provider, reset_provider_config};
     use crate::models::account::{CodexAccount, CodexAuthMode};
+    use crate::test_support::TestEnv;
 
     fn api_account() -> CodexAccount {
         CodexAccount {
@@ -480,5 +488,26 @@ mod tests {
         );
         assert!(!output.contains("https://api.old.test/v1"));
         assert!(output.contains("[model_providers.other]"));
+    }
+
+    #[test]
+    fn reset_provider_config_persists_cleaned_provider_settings() {
+        let env = TestEnv::new("reset-provider-config");
+        let config_path = env.root.join("codex-home").join("config.toml");
+        std::fs::write(
+            &config_path,
+            "model_provider = \"codex_local_access\"\nmodel = \"gpt-5.5\"\n[model_providers.codex_local_access]\nbase_url = \"https://api.old.test/v1\"\n[features]\nweb_search = true\n",
+        )
+        .expect("config fixture should be written");
+
+        reset_provider_config(&config_path).expect("reset should succeed");
+
+        let output = std::fs::read_to_string(config_path).expect("config should be readable");
+        assert!(!output.contains("model_provider = \"codex_local_access\""));
+        assert!(!output.contains("[model_providers.codex_local_access]"));
+        assert!(!output.contains("https://api.old.test/v1"));
+        assert!(output.contains("supports_websockets = false"));
+        assert!(output.contains("[features]"));
+        assert!(output.contains("web_search = true"));
     }
 }

@@ -7,6 +7,7 @@ import {
   listCodexAccounts,
   refreshAllCodexQuotas,
   refreshCodexQuota,
+  resetCodexProviderConfig,
   switchCodexAccount,
   updateCodexApiKeyAccount,
   updateCodexApiKeyBoundOAuthAccount,
@@ -22,13 +23,16 @@ interface CodexAccountsState {
   switchingAccountId: string | null;
   deletingAccountId: string | null;
   updatingAccountId: string | null;
+  resettingProviderConfig: boolean;
   error: AppError | null;
   lastSwitchNotice: string | null;
+  resetSettingsNotice: string | null;
   loadAccounts: () => Promise<void>;
   selectAccount: (accountId: string) => void;
   refreshAccountQuota: (accountId: string) => Promise<void>;
   refreshAllQuotas: () => Promise<void>;
   switchToAccount: (accountId: string) => Promise<void>;
+  resetProviderConfig: () => Promise<void>;
   deleteAccount: (accountId: string) => Promise<void>;
   updateApiKeyAccount: (
     accountId: string,
@@ -66,8 +70,10 @@ export const useCodexAccountsStore = create<CodexAccountsState>((set, get) => ({
   switchingAccountId: null,
   deletingAccountId: null,
   updatingAccountId: null,
+  resettingProviderConfig: false,
   error: null,
   lastSwitchNotice: null,
+  resetSettingsNotice: null,
   async loadAccounts() {
     set({ loading: true, error: null });
     try {
@@ -145,7 +151,7 @@ export const useCodexAccountsStore = create<CodexAccountsState>((set, get) => ({
     }
   },
   async switchToAccount(accountId) {
-    set({ switchingAccountId: accountId, error: null, lastSwitchNotice: null });
+    set({ switchingAccountId: accountId, error: null, lastSwitchNotice: null, resetSettingsNotice: null });
     try {
       const result = await switchCodexAccount(accountId);
       set((state) => {
@@ -170,8 +176,26 @@ export const useCodexAccountsStore = create<CodexAccountsState>((set, get) => ({
       set({ error: error as AppError, switchingAccountId: null });
     }
   },
+  async resetProviderConfig() {
+    set({
+      resettingProviderConfig: true,
+      error: null,
+      lastSwitchNotice: null,
+      resetSettingsNotice: null,
+    });
+    try {
+      await resetCodexProviderConfig();
+      set({
+        resettingProviderConfig: false,
+        resetSettingsNotice: 'Codex 默认设置已重置，config.toml 中的 provider 设置已清除。',
+      });
+    } catch (error) {
+      set({ error: error as AppError, resettingProviderConfig: false });
+      throw error;
+    }
+  },
   async deleteAccount(accountId) {
-    set({ deletingAccountId: accountId, error: null });
+    set({ deletingAccountId: accountId, error: null, resetSettingsNotice: null });
     try {
       await deleteCodexAccount(accountId);
       set((state) => {
