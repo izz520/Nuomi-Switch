@@ -188,12 +188,7 @@ export function AccountRow({
           <strong>{account.email ?? account.displayName}</strong>
           <span className={`account-plan-badge account-plan-${planTone}`}>{planText}</span>
         </span>
-        {!quotaUnsupported ? (
-          <span className="account-card-name">
-            <span>{account.displayName}</span>
-            {account.accountId ? <code>{account.accountId}</code> : null}
-          </span>
-        ) : null}
+        {!quotaUnsupported && account.accountId ? <code className="account-card-id">{account.accountId}</code> : null}
 
         {quotaUnsupported ? (
           <>
@@ -288,8 +283,8 @@ export function AccountRow({
                 <span className="quota-track">
                   <span style={{ width: `${quotaUnsupported ? 100 : normalizedWeekly}%` }} />
                 </span>
-                <span className="reset-credit-lines">
-                  <span className="reset-credit-heading">
+                <span className="reset-credit-meta">
+                  <span className="reset-credit-summary">
                     <span>
                       <RotateCcw size={14} />
                       重置机会
