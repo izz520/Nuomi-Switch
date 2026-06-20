@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Codex Lite",
+  "productName": "Nuomi Switch",
   "version": "0.1.0",
-  "identifier": "com.codexlite.desktop",
+  "identifier": "com.nuomiswitch.desktop",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Codex Lite",
+        "title": "Nuomi Switch",
         "width": 1180,
         "height": 760,
         "minWidth": 900,

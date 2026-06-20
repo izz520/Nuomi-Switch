@@ -1,36 +1,36 @@
-# Security
+# 安全说明
 
-Codex Lite handles local Codex credentials. Treat all account files, backups, and logs as sensitive.
+Nuomi Switch 会处理本地 Codex 凭据。请把所有账号文件、备份和日志都视为敏感数据。
 
-## Current Boundary
+## 当前边界
 
-Codex Lite is a local desktop app. It does not provide a hosted account service and does not require a Codex Lite backend.
+Nuomi Switch 是本地桌面应用，不提供托管账号服务，也不需要 Nuomi Switch 后端。
 
-Current first-stage credential storage is local JSON:
+第一阶段的凭据存储是本地 JSON：
 
 ```text
-Codex auth:      ~/.codex/auth.json
-Codex Lite data: platform app data directory/codex-lite/accounts.json
-Backups:         platform app data directory/codex-lite/backups
-Logs:            platform app data directory/codex-lite/logs
+Codex auth:       ~/.codex/auth.json
+Nuomi Switch 数据: 平台应用数据目录/nuomi-switch/accounts.json
+备份:              平台应用数据目录/nuomi-switch/backups
+日志:              平台应用数据目录/nuomi-switch/logs
 ```
 
-Local operating system account permissions are the main protection boundary for these files.
+这些文件主要依赖本机操作系统账号权限保护。
 
-## What Not To Share
+## 不要分享的内容
 
-Do not upload or paste any of the following into GitHub issues, pull requests, chat tools, screenshots, or public logs:
+不要把以下内容上传或粘贴到 GitHub issue、pull request、聊天工具、截图或公开日志中：
 
-- Real `~/.codex/auth.json`.
-- Real `accounts.json`.
-- Files from `backups/`.
-- Full API keys.
-- OAuth access tokens, refresh tokens, or ID tokens.
-- Authorization headers.
-- OAuth callback URLs or `code` query values.
-- Logs that have not been reviewed by you.
+- 真实 `~/.codex/auth.json`。
+- 真实 `accounts.json`。
+- `backups/` 中的文件。
+- 完整 API Key。
+- OAuth access token、refresh token 或 ID token。
+- Authorization header。
+- OAuth 回调 URL 或 `code` 查询参数。
+- 未经人工检查的日志。
 
-If you need to share a snippet, replace sensitive values with placeholders such as:
+如果需要分享片段，请用占位符替换敏感值，例如：
 
 ```text
 [REDACTED_TOKEN]
@@ -39,49 +39,49 @@ If you need to share a snippet, replace sensitive values with placeholders such 
 [REDACTED_OAUTH_CODE]
 ```
 
-## Logs and Redaction
+## 日志与脱敏
 
-Codex Lite includes redaction logic for common token, API key, authorization header, and OAuth callback patterns. Redaction is a safety layer, not a promise that every future credential format will be covered.
+Nuomi Switch 包含针对常见 Token、API Key、Authorization header 和 OAuth 回调参数的脱敏逻辑。脱敏只是安全防线之一，并不保证覆盖未来所有凭据格式。
 
-Before sharing logs, inspect them manually. If a full token, API key, authorization header, or OAuth code appears in logs, rotate the affected credential and treat it as a release blocker.
+分享日志前请人工检查。如果日志中出现完整 Token、API Key、Authorization header 或 OAuth code，请轮换受影响凭据，并把它视为发布阻断问题。
 
-## Network Behavior
+## 网络行为
 
-Codex Lite may contact Codex/OpenAI endpoints when you use OAuth login or quota refresh. It should not send credentials to a Codex Lite hosted service.
+使用 OAuth 登录或刷新额度时，Nuomi Switch 可能访问 Codex/OpenAI 端点。它不应把凭据发送到 Nuomi Switch 托管服务。
 
-Batch import preview and local account management should operate on local files.
+批量导入预览和本地账号管理应只处理本地文件。
 
-## Secret Store Plan
+## 密钥存储计划
 
-The current first-stage release stores credentials in local JSON files. Before a wider public release, the planned direction is to evaluate OS-backed secret storage:
+当前第一阶段版本把凭据保存在本地 JSON 文件。更大范围公开发布前，计划评估系统级密钥存储：
 
-- macOS Keychain.
-- Windows Credential Manager.
-- Linux Secret Service compatible keyrings.
+- macOS Keychain。
+- Windows Credential Manager。
+- Linux Secret Service 兼容 keyring。
 
-Until that is implemented and validated, assume anyone who can read your local user data directory can read Codex Lite stored credentials.
+在完成实现和验证前，请假设任何能读取本地用户数据目录的人都能读取 Nuomi Switch 保存的凭据。
 
-## Secret Store Evaluation
+## 密钥存储评估
 
-OS-backed secret storage is useful hardening, but it is not required for the first public release if the local JSON boundary stays explicit.
+系统级密钥存储能增强安全性，但只要本地 JSON 边界足够明确，它不是第一阶段公开发布的硬性前置条件。
 
-Current evaluation:
+当前评估：
 
-- macOS Keychain would reduce exposure from casual file reads, but it adds migration and recovery complexity for accounts already stored in `accounts.json`.
-- Windows Credential Manager needs separate validation on a Windows runner or machine before it can be treated as release-ready.
-- Linux Secret Service depends on a user session keyring and may not be available in minimal desktop environments.
-- Cross-platform secret storage would need a migration path that can read existing JSON credentials, write secrets to the OS store, and recover cleanly when the OS store is locked or unavailable.
+- macOS Keychain 能降低普通文件读取造成的暴露，但会增加既有 `accounts.json` 账号的迁移和恢复复杂度。
+- Windows Credential Manager 需要在 Windows runner 或真实机器上单独验证，才能视为发布可用。
+- Linux Secret Service 依赖用户会话 keyring，在精简桌面环境中可能不可用。
+- 跨平台密钥存储需要迁移路径：读取现有 JSON 凭据、写入系统密钥库，并在密钥库锁定或不可用时干净恢复。
 
-Decision for this stage: keep JSON storage documented and tested. Treat OS secret store support as a later hardening task, not as a silent fallback.
+当前阶段决策：继续文档化并测试 JSON 存储。系统密钥存储作为后续加固任务，不作为静默 fallback。
 
-## Reporting Security Issues
+## 报告安全问题
 
-Please do not open public issues with exploitable details or real credentials. Use a minimal private report path when one is available, or open a public issue with only high-level impact and no secrets.
+请不要在公开 issue 中包含可利用细节或真实凭据。有私有报告渠道时请优先使用；否则只在公开 issue 中描述高层影响，不附带秘密信息。
 
-Useful report details:
+有用的报告信息：
 
-- Operating system.
-- Codex Lite version or commit.
-- Affected feature.
-- Whether real credentials may have been exposed.
-- Redacted reproduction steps.
+- 操作系统。
+- Nuomi Switch 版本或 commit。
+- 受影响功能。
+- 是否可能暴露真实凭据。
+- 已脱敏的复现步骤。

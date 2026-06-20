@@ -1,3 +1,3 @@
 fn main() {
-    codex_lite_lib::run();
+    nuomi_switch_lib::run();
 }

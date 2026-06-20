@@ -33,30 +33,30 @@ function getStatusText({
   value,
 }: Pick<QuotaMeterProps, 'error' | 'loading' | 'resetAt' | 'stale' | 'unsupported' | 'value'>): string {
   if (loading) {
-    return 'Refreshing';
+    return '刷新中';
   }
   if (unsupported) {
-    return 'Unsupported';
+    return '不支持';
   }
   if (error) {
-    return stale && typeof value === 'number' ? 'Stale after error' : 'Refresh failed';
+    return stale && typeof value === 'number' ? '刷新失败，显示旧数据' : '刷新失败';
   }
   if (stale) {
-    return 'Stale';
+    return '旧数据';
   }
   if (resetAt) {
-    return `Resets ${resetAt}`;
+    return `${resetAt} 重置`;
   }
   if (typeof value !== 'number') {
-    return 'Unknown';
+    return '未知';
   }
-  return 'Fresh';
+  return '最新';
 }
 
 export function QuotaMeter({ error, label, loading = false, resetAt, stale = false, unsupported = false, value }: QuotaMeterProps) {
   const normalized = typeof value === 'number' ? Math.max(0, Math.min(100, value)) : 0;
   const tone = unsupported || error ? 'unknown' : getTone(value);
-  const text = loading ? '...' : typeof value === 'number' ? `${normalized}%` : 'Unknown';
+  const text = loading ? '...' : typeof value === 'number' ? `${normalized}%` : '未知';
   const statusText = getStatusText({ error, loading, resetAt, stale, unsupported, value });
 
   return (

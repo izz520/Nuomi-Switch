@@ -13,12 +13,12 @@ pub fn app_data_dir() -> AppResult<PathBuf> {
     }
 
     dirs::data_dir()
-        .map(|path| path.join("codex-lite"))
+        .map(|path| path.join("nuomi-switch"))
         .ok_or_else(|| {
             AppError::new(
                 "DATA_DIR_UNAVAILABLE",
-                "Unable to resolve app data directory.",
-                "Check your user profile permissions.",
+                "无法解析应用数据目录。",
+                "请检查当前用户资料目录权限。",
             )
         })
 }
@@ -51,8 +51,8 @@ pub fn default_codex_home() -> AppResult<PathBuf> {
         .ok_or_else(|| {
             AppError::new(
                 "HOME_DIR_UNAVAILABLE",
-                "Unable to resolve home directory.",
-                "Check your user profile permissions.",
+                "无法解析用户主目录。",
+                "请检查当前用户资料目录权限。",
             )
         })
 }

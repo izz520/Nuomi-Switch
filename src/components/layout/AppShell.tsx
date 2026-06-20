@@ -5,7 +5,6 @@ import {
   Moon,
   MessagesSquare,
   Settings,
-  SquareTerminal,
   Sun,
   Users,
 } from 'lucide-react';
@@ -74,10 +73,10 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
 
   return (
     <div className="app-shell">
-      <nav className="app-nav" aria-label="Primary">
+      <nav className="app-nav" aria-label="主导航">
         <div className="app-brand">
           <div className="app-logo" aria-hidden="true">
-            <SquareTerminal size={20} />
+            <img src="/nuomi-logo.png" alt="" />
           </div>
         </div>
 

@@ -1841,7 +1841,7 @@ fn format_thread_updated_at_iso(updated_at: Option<i64>) -> String {
 fn rebuild_thread_metadata_best_effort(codex_home: &Path) {
     if let Err(err) = codex_official_app_server_service::rebuild_thread_metadata(codex_home) {
         eprintln!(
-            "Codex Lite skipped official thread metadata rebuild for {}: {:?}",
+            "Nuomi Switch skipped official thread metadata rebuild for {}: {:?}",
             codex_home.display(),
             err
         );
@@ -1957,7 +1957,7 @@ mod tests {
     use rusqlite::Connection;
 
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!("codex-lite-{name}-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("nuomi-switch-{name}-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&path).expect("temp dir should be created");
         path
     }
@@ -2151,7 +2151,7 @@ mod tests {
             .expect("threads table should be created");
         connection
             .execute(
-                "INSERT INTO threads (id, model_provider, title, cwd, archived, updated_at_ms) VALUES ('project-thread', 'openai', 'Project Thread', '/Users/test/project/codex-lite', 0, 1781540000000)",
+                "INSERT INTO threads (id, model_provider, title, cwd, archived, updated_at_ms) VALUES ('project-thread', 'openai', 'Project Thread', '/Users/test/project/nuomi-switch', 0, 1781540000000)",
                 [],
             )
             .expect("row should be inserted");
@@ -2167,10 +2167,10 @@ mod tests {
         assert!(summary.repaired);
         let state = std::fs::read_to_string(root.join(".codex-global-state.json"))
             .expect("global state should be readable");
-        assert!(state.contains("\"active-workspace-roots\":[\"/Users/test/project/codex-lite\"]"));
+        assert!(state.contains("\"active-workspace-roots\":[\"/Users/test/project/nuomi-switch\"]"));
         assert!(state
-            .contains("\"electron-saved-workspace-roots\":[\"/Users/test/project/codex-lite\"]"));
-        assert!(state.contains("\"project-order\":[\"/Users/test/project/codex-lite\"]"));
+            .contains("\"electron-saved-workspace-roots\":[\"/Users/test/project/nuomi-switch\"]"));
+        assert!(state.contains("\"project-order\":[\"/Users/test/project/nuomi-switch\"]"));
         let manifest_path = summary.backup_path.expect("backup path should exist");
         let manifest =
             std::fs::read_to_string(std::path::Path::new(&manifest_path).join("manifest.json"))

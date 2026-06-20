@@ -20,38 +20,38 @@ interface ImportSourceOption {
 const importSources: ImportSourceOption[] = [
   {
     id: 'local',
-    label: 'Current local auth',
-    description: 'Use ~/.codex/auth.json',
+    label: '当前本地授权',
+    description: '使用 ~/.codex/auth.json',
     icon: <FolderOpen size={15} />,
   },
   {
     id: 'jsonFile',
-    label: 'JSON file',
-    description: 'Choose one auth JSON file',
+    label: 'JSON 文件',
+    description: '选择一个授权 JSON 文件',
     icon: <FileJson size={16} />,
   },
   {
     id: 'jsonText',
-    label: 'JSON text',
-    description: 'Paste auth JSON content',
+    label: 'JSON 文本',
+    description: '粘贴授权 JSON 内容',
     icon: <TextCursorInput size={16} />,
   },
   {
     id: 'token',
     label: 'Token',
-    description: 'Paste id/access/refresh token',
+    description: '粘贴 id/access/refresh token',
     icon: <LockKeyhole size={16} />,
   },
   {
     id: 'apiKey',
     label: 'API Key',
-    description: 'Add an API key account',
+    description: '添加 API Key 账号',
     icon: <KeyRound size={16} />,
   },
   {
     id: 'oauth',
-    label: 'OAuth login',
-    description: 'Browser login with callback',
+    label: 'OAuth 登录',
+    description: '浏览器登录并回调',
     icon: <LockKeyhole size={16} />,
   },
 ];
@@ -63,20 +63,20 @@ function fileName(filePath: string): string {
 function jsonTextPreview(jsonText: string): string {
   const trimmed = jsonText.trim();
   if (trimmed.length === 0) {
-    return 'No JSON content pasted yet.';
+    return '还没有粘贴 JSON 内容。';
   }
 
   try {
     const parsed = JSON.parse(trimmed) as unknown;
     if (Array.isArray(parsed)) {
-      return `${parsed.length} account export item(s) ready to import.`;
+      return `${parsed.length} 个账号导出项可导入。`;
     }
     if (typeof parsed !== 'object' || parsed === null) {
-      return 'JSON must be an object or array.';
+      return 'JSON 必须是对象或数组。';
     }
     const record = parsed as Record<string, unknown>;
     if (record.type === 'sub2api-data' && Array.isArray(record.accounts)) {
-      return `${record.accounts.length} sub2api account(s) ready to import.`;
+      return `${record.accounts.length} 个 sub2api 账号可导入。`;
     }
     if (
       typeof record.id_token === 'string' ||
@@ -84,12 +84,12 @@ function jsonTextPreview(jsonText: string): string {
       typeof record.access_token === 'string' ||
       typeof record.accessToken === 'string'
     ) {
-      return 'CPA token export ready to import.';
+      return 'CPA token 导出内容可导入。';
     }
     const keys = Object.keys(record).slice(0, 5);
-    return keys.length > 0 ? `Object keys: ${keys.join(', ')}` : 'Valid empty JSON object.';
+    return keys.length > 0 ? `对象字段：${keys.join(', ')}` : '有效的空 JSON 对象。';
   } catch {
-    return 'JSON will be checked before import.';
+    return '导入前会检查 JSON。';
   }
 }
 
@@ -247,19 +247,19 @@ export function ImportDrawer() {
       <aside className="import-drawer" role="dialog" aria-modal="true" aria-labelledby="import-title">
         <header className="drawer-header">
           <div>
-            <h2 id="import-title">Add account</h2>
-            <p>Add Codex accounts from local auth, JSON, tokens, or API keys.</p>
+            <h2 id="import-title">添加账号</h2>
+            <p>从本地授权、JSON、Token 或 API Key 添加 Codex 账号。</p>
           </div>
-          <IconButton label="Close add account drawer" icon={<X size={16} />} onClick={closeDrawer} />
+          <IconButton label="关闭添加账号抽屉" icon={<X size={16} />} onClick={closeDrawer} />
         </header>
 
         <div className="drawer-body">
-          <nav className="source-panel" aria-label="Account source">
+          <nav className="source-panel" aria-label="账号来源">
             <div className="source-panel-heading">
-              <h3>Account type</h3>
-              <span>Choose how this account enters Codex Lite.</span>
+              <h3>账号来源</h3>
+              <span>选择账号进入 Nuomi Switch 的方式。</span>
             </div>
-            <div className="source-tabs" role="tablist" aria-label="Account source" aria-orientation="vertical">
+            <div className="source-tabs" role="tablist" aria-label="账号来源" aria-orientation="vertical">
               {importSources.map((item) => (
                 <button
                   aria-controls={`import-panel-${item.id}`}
@@ -306,7 +306,7 @@ export function ImportDrawer() {
             <div className="import-form-area">
               {source === 'local' ? (
                 <div className="local-auth-panel">
-                  <span>Codex Lite will read your current local auth file and add it to the local account list.</span>
+                  <span>Nuomi Switch 会读取当前本地授权文件，并添加到本地账号列表。</span>
                   <code>~/.codex/auth.json</code>
                 </div>
               ) : null}
@@ -315,18 +315,18 @@ export function ImportDrawer() {
                 <div className="import-field-group">
                   <div className="file-actions">
                     <Button variant="secondary" loading={selectingFiles} icon={<FileJson size={16} />} onClick={chooseFiles}>
-                      Choose JSON
+                      选择 JSON
                     </Button>
                     {filePaths.length > 0 ? (
                       <Button variant="ghost" onClick={clearFiles}>
-                        Clear
+                        清空
                       </Button>
                     ) : null}
                   </div>
                   {filePaths.length === 0 ? (
-                    <p className="muted">Choose one or more Codex auth JSON files.</p>
+                    <p className="muted">选择一个或多个 Codex 授权 JSON 文件。</p>
                   ) : (
-                    <ul className="file-preview-list" aria-label="Selected import files">
+                    <ul className="file-preview-list" aria-label="已选择的导入文件">
                       {filePaths.map((filePath) => (
                         <li key={filePath}>
                           <strong>{fileName(filePath)}</strong>
@@ -335,13 +335,13 @@ export function ImportDrawer() {
                       ))}
                     </ul>
                   )}
-                  {previewingBatch ? <p className="muted">Preparing batch preview...</p> : null}
+                  {previewingBatch ? <p className="muted">正在准备批量预览...</p> : null}
                 </div>
               ) : null}
 
               {source === 'jsonText' ? (
                 <label className="import-field">
-                  <span>Auth JSON</span>
+                  <span>授权 JSON</span>
                   <textarea
                     rows={9}
                     spellCheck={false}
@@ -360,7 +360,7 @@ export function ImportDrawer() {
                       rows={3}
                       spellCheck={false}
                       value={tokenFields.idToken}
-                      placeholder="Paste id_token"
+                      placeholder="粘贴 id_token"
                       onChange={(event) => setTokenField('idToken', event.target.value)}
                     />
                   </label>
@@ -370,7 +370,7 @@ export function ImportDrawer() {
                       rows={3}
                       spellCheck={false}
                       value={tokenFields.accessToken}
-                      placeholder="Paste access_token"
+                      placeholder="粘贴 access_token"
                       onChange={(event) => setTokenField('accessToken', event.target.value)}
                     />
                   </label>
@@ -378,7 +378,7 @@ export function ImportDrawer() {
                     <span>Refresh token</span>
                     <input
                       value={tokenFields.refreshToken}
-                      placeholder="Optional"
+                      placeholder="可选"
                       onChange={(event) => setTokenField('refreshToken', event.target.value)}
                     />
                   </label>
@@ -388,7 +388,7 @@ export function ImportDrawer() {
               {source === 'apiKey' ? (
                 <div className="import-field-group">
                   <label className="import-field">
-                    <span>API key</span>
+                    <span>API Key</span>
                     <input
                       value={apiKeyFields.apiKey}
                       placeholder="sk-..."
@@ -396,18 +396,18 @@ export function ImportDrawer() {
                     />
                   </label>
                   <label className="import-field">
-                    <span>Display name</span>
+                    <span>显示名称</span>
                     <input
                       value={apiKeyFields.displayName}
-                      placeholder="Optional"
+                      placeholder="可选"
                       onChange={(event) => setApiKeyField('displayName', event.target.value)}
                     />
                   </label>
                   <label className="import-field">
-                    <span>API base URL</span>
+                    <span>API 基础地址</span>
                     <input
                       value={apiKeyFields.apiBaseUrl}
-                      placeholder="Optional, e.g. https://api.openai.com/v1"
+                      placeholder="可选，例如 https://api.openai.com/v1"
                       onChange={(event) => setApiKeyField('apiBaseUrl', event.target.value)}
                     />
                   </label>
@@ -432,13 +432,13 @@ export function ImportDrawer() {
             </div>
 
             <section className="drawer-preview" aria-labelledby="import-preview-title">
-              <h3 id="import-preview-title">Import preview</h3>
+              <h3 id="import-preview-title">导入预览</h3>
               {resultAccounts.length === 0 && failedImports.length === 0 ? (
                 <PreviewHint source={source} jsonText={jsonText} filePaths={filePaths} />
               ) : null}
               {resultAccounts.length > 0 || failedImports.length > 0 ? (
                 <p className="import-summary">
-                  Added {resultAccounts.length}, failed {failedImports.length}
+                  已添加 {resultAccounts.length} 个，失败 {failedImports.length} 个
                 </p>
               ) : null}
               {batchPreview ? (
@@ -450,7 +450,7 @@ export function ImportDrawer() {
                 />
               ) : null}
               {resultAccounts.length > 0 ? (
-                <ul className="import-result-list" aria-label="Added accounts">
+                <ul className="import-result-list" aria-label="已添加账号">
                   {resultAccounts.map((account) => (
                     <li key={account.id}>
                       <CheckCircle2 size={16} aria-hidden="true" />
@@ -463,7 +463,7 @@ export function ImportDrawer() {
                 </ul>
               ) : null}
               {failedImports.length > 0 ? (
-                <ul className="import-failure-list" aria-label="Failed imports">
+                <ul className="import-failure-list" aria-label="导入失败">
                   {failedImports.map((failure) => (
                     <li key={`${failure.source}-${failure.error}`}>
                       <strong>{fileName(failure.source)}</strong>
@@ -478,10 +478,10 @@ export function ImportDrawer() {
 
         <footer className="drawer-footer">
           <Button variant="ghost" onClick={closeDrawer}>
-            Cancel
+            取消
           </Button>
           <Button variant="primary" loading={importing} disabled={confirmDisabled} onClick={handleImport}>
-            Add account
+            添加账号
           </Button>
         </footer>
       </aside>
@@ -501,22 +501,22 @@ function PreviewHint({ source, jsonText, filePaths }: PreviewHintProps) {
   }
 
   if (source === 'jsonFile' || source === 'batchFiles') {
-    return <p className="muted">{filePaths.length > 0 ? `${filePaths.length} file(s) ready to import.` : 'No file selected yet.'}</p>;
+    return <p className="muted">{filePaths.length > 0 ? `${filePaths.length} 个文件可导入。` : '还没有选择文件。'}</p>;
   }
 
   if (source === 'token') {
-    return <p className="muted">Tokens are validated locally before the account is stored.</p>;
+    return <p className="muted">保存账号前会在本地校验 Token。</p>;
   }
 
   if (source === 'apiKey') {
-    return <p className="muted">The API key is stored as a Codex API key account after confirmation.</p>;
+    return <p className="muted">确认后会把 API Key 保存为 Codex API Key 账号。</p>;
   }
 
   if (source === 'oauth') {
-    return <p className="muted">Start login, finish authorization in your browser, and Codex Lite will add the account automatically.</p>;
+    return <p className="muted">开始登录并在浏览器完成授权，Nuomi Switch 会自动添加账号。</p>;
   }
 
-  return <p className="muted">Ready to add your current local Codex auth.</p>;
+  return <p className="muted">已准备好添加当前本地 Codex 授权。</p>;
 }
 
 interface OAuthLoginPanelProps {
@@ -566,56 +566,56 @@ function OAuthLoginPanel({
     <div className="oauth-panel">
       <div className="oauth-actions">
         <Button variant="secondary" loading={starting} icon={<LockKeyhole size={16} />} onClick={onStart}>
-          Start Login
+          开始登录
         </Button>
         {login ? (
           <Button variant="ghost" loading={cancelling} onClick={onCancel}>
-            Cancel Login
+            取消登录
           </Button>
         ) : null}
       </div>
 
-      {step === 'cancelled' ? <p className="muted">OAuth login was cancelled. Start again when ready.</p> : null}
-      {step === 'expired' ? <p className="oauth-warning">OAuth login expired. Start a new login.</p> : null}
+      {step === 'cancelled' ? <p className="muted">OAuth 登录已取消，准备好后可以重新开始。</p> : null}
+      {step === 'expired' ? <p className="oauth-warning">OAuth 登录已过期，请重新开始。</p> : null}
 
       {login ? (
         <div className="oauth-session">
           <dl className="oauth-meta">
             <div>
-              <dt>Redirect URI</dt>
+              <dt>回调地址</dt>
               <dd>{login.redirectUri}</dd>
             </div>
             <div>
-              <dt>Login ID</dt>
+              <dt>登录 ID</dt>
               <dd>{login.loginId}</dd>
             </div>
             <div>
-              <dt>Expires</dt>
+              <dt>过期时间</dt>
               <dd>{formatExpiresAt(login.expiresAt)}</dd>
             </div>
           </dl>
 
           {portInUse ? (
             <p className="oauth-warning">
-              Automatic callback listener is unavailable. Paste the browser callback URL manually to continue.
+              自动回调监听不可用。请手动粘贴浏览器回调 URL 后继续。
               {login.listenerError ? <span>{login.listenerError}</span> : null}
             </p>
           ) : (
-            <p className="oauth-ready">Automatic callback listener is running. Finish browser authorization and return here.</p>
+            <p className="oauth-ready">自动回调监听已启动。请完成浏览器授权后返回这里。</p>
           )}
 
           <div className="oauth-url-row">
             <a className="oauth-auth-link" href={login.authUrl} target="_blank" rel="noreferrer">
               <ExternalLink size={15} />
-              Open auth URL
+              打开授权链接
             </a>
             <Button variant="ghost" icon={<Copy size={15} />} onClick={copyAuthUrl}>
-              Copy URL
+              复制链接
             </Button>
           </div>
 
           <label className="import-field">
-            <span>Callback URL</span>
+            <span>回调 URL</span>
             <textarea
               rows={4}
               spellCheck={false}
@@ -632,13 +632,13 @@ function OAuthLoginPanel({
               disabled={!canSubmitCallback || submittingCallback}
               onClick={onSubmitCallback}
             >
-              Submit Callback
+              提交回调
             </Button>
-            {step === 'callbackSubmitted' ? <span className="oauth-ready">Callback received. Adding account...</span> : null}
+            {step === 'callbackSubmitted' ? <span className="oauth-ready">已收到回调，正在添加账号...</span> : null}
           </div>
         </div>
       ) : (
-        <p className="muted">Start login and finish authorization in your browser. If automatic callback is unavailable, paste the full callback URL.</p>
+        <p className="muted">开始登录并在浏览器完成授权。如果自动回调不可用，请粘贴完整回调 URL。</p>
       )}
     </div>
   );

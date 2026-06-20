@@ -65,5 +65,5 @@ pub fn run() {
             commands::window::window_start_dragging,
         ])
         .run(tauri::generate_context!())
-        .expect("failed to run Codex Lite");
+        .expect("failed to run Nuomi Switch");
 }

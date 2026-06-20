@@ -48,7 +48,7 @@ export function OAuthBindingModal({
             <h2 id="oauth-binding-modal-title">绑定 OAuth 账号</h2>
             <p>登录态使用 OAuth，API 请求继续使用当前 API Key 的基础地址与配置。</p>
           </div>
-          <button type="button" aria-label="Close OAuth binding modal" onClick={onCancel}>
+          <button type="button" aria-label="关闭 OAuth 绑定窗口" onClick={onCancel}>
             <X size={16} />
           </button>
         </header>
@@ -62,7 +62,7 @@ export function OAuthBindingModal({
           <code>{apiAccount.apiBaseUrl ?? 'https://api.openai.com/v1'}</code>
         </div>
 
-        <div className="oauth-binding-list" role="radiogroup" aria-label="OAuth accounts">
+        <div className="oauth-binding-list" role="radiogroup" aria-label="OAuth 账号">
           {oauthAccounts.length === 0 ? (
             <div className="oauth-binding-empty">
               <ShieldCheck size={18} />

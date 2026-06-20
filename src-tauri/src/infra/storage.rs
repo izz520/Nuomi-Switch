@@ -23,15 +23,15 @@ pub fn load_accounts_file() -> AppResult<AccountsFile> {
     let content = fs::read_to_string(&path).map_err(|err| {
         AppError::new(
             "STORAGE_READ_FAILED",
-            format!("Failed to read {}: {}", path.display(), err),
-            "Open the data directory and check file permissions.",
+            format!("读取 {} 失败：{}", path.display(), err),
+            "请打开数据目录并检查文件权限。",
         )
     })?;
     serde_json::from_str(&content).map_err(|err| {
         AppError::new(
             "STORAGE_INVALID_FORMAT",
-            format!("Failed to parse {}: {}", path.display(), err),
-            "Back up the file, then re-import accounts.",
+            format!("解析 {} 失败：{}", path.display(), err),
+            "请先备份该文件，然后重新导入账号。",
         )
     })
 }
@@ -42,8 +42,8 @@ pub fn save_accounts_file(mut file: AccountsFile) -> AppResult<()> {
     let content = serde_json::to_vec_pretty(&file).map_err(|err| {
         AppError::new(
             "STORAGE_SERIALIZE_FAILED",
-            format!("Failed to serialize accounts: {}", err),
-            "Try again.",
+            format!("序列化账号失败：{}", err),
+            "请重试。",
         )
     })?;
     atomic_write::write_atomic(&path, &content)
@@ -57,15 +57,15 @@ pub fn load_settings() -> AppResult<AppSettings> {
     let content = fs::read_to_string(&path).map_err(|err| {
         AppError::new(
             "SETTINGS_READ_FAILED",
-            format!("Failed to read {}: {}", path.display(), err),
-            "Open the data directory and check file permissions.",
+            format!("读取 {} 失败：{}", path.display(), err),
+            "请打开数据目录并检查文件权限。",
         )
     })?;
     serde_json::from_str(&content).map_err(|err| {
         AppError::new(
             "SETTINGS_INVALID_FORMAT",
-            format!("Failed to parse {}: {}", path.display(), err),
-            "Reset settings or edit the file manually.",
+            format!("解析 {} 失败：{}", path.display(), err),
+            "请重置设置，或手动编辑该文件。",
         )
     })
 }
@@ -75,8 +75,8 @@ pub fn save_settings(settings: AppSettings) -> AppResult<AppSettings> {
     let content = serde_json::to_vec_pretty(&settings).map_err(|err| {
         AppError::new(
             "SETTINGS_SERIALIZE_FAILED",
-            format!("Failed to serialize settings: {}", err),
-            "Try again.",
+            format!("序列化设置失败：{}", err),
+            "请重试。",
         )
     })?;
     atomic_write::write_atomic(&path, &content)?;

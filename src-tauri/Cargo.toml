@@ -1,15 +1,15 @@
 [package]
-name = "codex-lite"
+name = "nuomi-switch"
 version = "0.1.0"
-description = "Lightweight Codex account manager"
-authors = ["Codex Lite"]
+description = "轻量级 Codex 账号管理工具"
+authors = ["Nuomi Switch"]
 license = "MIT"
 edition = "2021"
 
 [workspace]
 
 [lib]
-name = "codex_lite_lib"
+name = "nuomi_switch_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

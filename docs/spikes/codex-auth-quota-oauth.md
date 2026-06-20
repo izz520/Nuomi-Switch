@@ -1,42 +1,39 @@
-# Codex Auth, Quota, and OAuth Spike
+# Codex Auth、额度与 OAuth 调研
 
-## Current shape
+## 当前形态
 
-- OAuth auth files are parsed from `tokens.idToken`, `tokens.accessToken`, optional `tokens.refreshToken`, and optional `tokens.accountId`.
-- API key auth files are parsed from `OPENAI_API_KEY` plus optional `baseUrl`.
-- OAuth account identity is derived from the ID token JWT payload, preferring `sub`, then `accountId`, then `email`.
-- Quota refresh calls `https://chatgpt.com/backend-api/wham/usage` with an OAuth bearer access token and optional `ChatGPT-Account-Id`.
-- OAuth login currently uses PKCE and a manual callback URL paste flow. It does not run a local callback HTTP listener yet.
+- OAuth 授权文件会从 `tokens.idToken`、`tokens.accessToken`、可选 `tokens.refreshToken` 和可选 `tokens.accountId` 解析。
+- API Key 授权文件会从 `OPENAI_API_KEY` 和可选 `baseUrl` 解析。
+- OAuth 账号身份来自 ID token JWT payload，优先使用 `sub`，其次是 `accountId`，最后是 `email`。
+- 额度刷新会使用 OAuth bearer access token 和可选 `ChatGPT-Account-Id` 调用 `https://chatgpt.com/backend-api/wham/usage`。
+- OAuth 登录使用 PKCE，并支持手动粘贴回调 URL；也可以通过本地回调监听器自动接收回调。
 
-## Fixtures
+## Fixture
 
-- `fixtures/redacted-auth/oauth.json` contains a synthetic unsigned JWT with fixture-only email and subject values.
-- `fixtures/redacted-auth/api-key.json` contains a non-real API key shaped like a key for parser coverage only.
-- `fixtures/redacted-auth/invalid-empty.json` contains no usable credentials and must fail account projection.
+- `fixtures/redacted-auth/oauth.json` 包含一个合成的未签名 JWT，只使用 fixture 邮箱和 subject。
+- `fixtures/redacted-auth/api-key.json` 包含一个非真实 API Key，仅用于 parser 覆盖。
+- `fixtures/redacted-auth/invalid-empty.json` 不包含可用凭据，必须在账号投影时失败。
 
-These fixtures must never be replaced with real tokens, refresh tokens, authorization codes, or API keys.
+这些 fixture 绝不能替换成真实 Token、refresh token、authorization code 或 API Key。
 
-## Tests added in T-019
+## T-019 添加的测试
 
-- Redaction covers token fields, API key fields, Authorization headers, and OAuth callback `code` query values.
-- Auth parser covers OAuth fixture projection, API key fixture projection, and invalid credential shape.
-- Quota tests cover response parsing and HTTP error classification without network calls.
-- OAuth tests cover auth URL construction, query decoding, callback extraction, and missing-code errors without network calls.
+- 脱敏覆盖 Token 字段、API Key 字段、Authorization header 和 OAuth 回调 `code` 查询参数。
+- 授权解析覆盖 OAuth fixture、API Key fixture 和无效凭据结构。
+- 额度测试覆盖响应解析和 HTTP 错误分类，不发起网络请求。
+- OAuth 测试覆盖授权 URL 构造、query 解码、回调提取和缺少 code 的错误，不发起网络请求。
 
-## Not covered yet
+## 尚未覆盖
 
-- Redaction gate currently fails for two cases:
-  - `Authorization: Bearer <token>` leaves the bearer token visible because the current marker-based scanner stops after redacting `Bearer`.
-  - A string containing both `OPENAI_API_KEY` and a later `api_key` leaves the later value visible because the scanner redacts only the first match per marker.
-- Switch service is not covered by an isolated unit test because the current implementation resolves the real default `~/.codex/auth.json` path through `dirs::home_dir()` and writes through the production storage path. A reliable switch test should first introduce injectable path/storage boundaries or an integration harness that pins app data and home directories to a temporary sandbox.
-- Quota is not smoke-tested against a real account because this workspace does not include an authorized redacted live account and the quota endpoint can reveal account-specific state. Current tests verify parsing and error classification only.
-- OAuth token exchange is not smoke-tested because it requires a live browser authorization flow and a short-lived authorization code. Current tests verify local URL/callback handling only.
+- 切换服务还没有独立单元测试，因为当前实现会通过 `dirs::home_dir()` 解析真实默认 `~/.codex/auth.json` 路径，并通过生产存储路径写入。可靠的切换测试应先引入可注入路径/存储边界，或使用能把 app data 和 home 目录固定到临时沙箱的集成测试 harness。
+- 额度还没有用真实账号 smoke 测试，因为当前 workspace 不包含授权后的脱敏真实账号，且额度端点可能暴露账号特定状态。当前测试只验证解析和错误分类。
+- OAuth token exchange 需要真实浏览器授权流和短生命周期 authorization code，因此仍需要真实环境 smoke；当前测试只验证本地 URL/回调处理。
 
-## Follow-up validation steps
+## 后续验证步骤
 
-1. Import a redacted real OAuth account on a local machine that owns the account.
-2. Run `cargo test auth_file_service` to confirm fixture parsing still passes.
-3. Run the app and complete manual OAuth callback login with a disposable account.
-4. Refresh quota for that OAuth account and record only status class, response shape, and redacted error code/body snippets.
-5. Add a temporary-path integration harness before testing switch backup/rollback behavior.
-6. Re-run `cargo test` and `pnpm typecheck` before public release.
+1. 在拥有账号的本机导入一个已脱敏的真实 OAuth 账号。
+2. 运行 `cargo test auth_file_service`，确认 fixture 解析仍然通过。
+3. 启动应用，并使用一次性账号完成 OAuth 回调登录。
+4. 刷新该 OAuth 账号额度，只记录状态类别、响应形态和已脱敏的错误码/响应片段。
+5. 在测试切换备份/回滚行为前，先增加临时路径集成 harness。
+6. 公开发布前重新运行 `cargo test` 和 `pnpm typecheck`。

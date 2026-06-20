@@ -27,6 +27,16 @@ function statusIcon(status: BatchImportItem['status']) {
   return <AlertTriangle size={15} aria-hidden="true" />;
 }
 
+function statusText(status: BatchImportItem['status']): string {
+  if (status === 'importable') {
+    return '可导入';
+  }
+  if (status === 'existing') {
+    return '已存在';
+  }
+  return '不可导入';
+}
+
 export function BatchImportPreviewTable({
   items,
   selectedItemIds,
@@ -41,8 +51,8 @@ export function BatchImportPreviewTable({
     <div className="batch-preview">
       <div className="batch-preview-toolbar">
         <div>
-          <strong>{items.length} file result(s)</strong>
-          <span>{selectedItemIds.length} selected</span>
+          <strong>{items.length} 个文件结果</strong>
+          <span>已选择 {selectedItemIds.length} 个</span>
         </div>
         <label className="batch-select-all">
           <input
@@ -51,15 +61,15 @@ export function BatchImportPreviewTable({
             type="checkbox"
             onChange={(event) => onToggleAll(event.target.checked)}
           />
-          <span>Select importable</span>
+          <span>选择可导入项</span>
         </label>
       </div>
 
-      <div className="batch-preview-table" role="table" aria-label="Batch import preview">
+      <div className="batch-preview-table" role="table" aria-label="批量导入预览">
         <div className="batch-preview-row batch-preview-head" role="row">
-          <span role="columnheader">Use</span>
-          <span role="columnheader">Account</span>
-          <span role="columnheader">Status</span>
+          <span role="columnheader">使用</span>
+          <span role="columnheader">账号</span>
+          <span role="columnheader">状态</span>
         </div>
         {items.map((item) => {
           const selectable = item.selectable && item.status === 'importable';
@@ -72,7 +82,7 @@ export function BatchImportPreviewTable({
                   type="checkbox"
                   onChange={() => onToggleItem(item.id)}
                 />
-                <span className="sr-only">Select {itemLabel(item)}</span>
+                <span className="sr-only">选择 {itemLabel(item)}</span>
               </label>
               <div className="batch-preview-account">
                 <strong title={itemLabel(item)}>{itemLabel(item)}</strong>
@@ -80,7 +90,7 @@ export function BatchImportPreviewTable({
               </div>
               <div className={`batch-preview-status status-${item.status}`}>
                 {statusIcon(item.status)}
-                <span>{item.status}</span>
+                <span>{statusText(item.status)}</span>
                 {item.reason ? <small title={item.reason}>{item.reason}</small> : null}
                 {item.quotaWarning ? <small title={item.quotaWarning}>{item.quotaWarning}</small> : null}
               </div>

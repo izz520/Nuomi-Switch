@@ -217,7 +217,7 @@ mod tests {
             Some("65675")
         );
         assert!(super::parse_codex_main_process_id(
-            "73525 /Applications/Codex Lite.app/Contents/MacOS/codex-lite"
+            "73525 /Applications/Nuomi Switch.app/Contents/MacOS/nuomi-switch"
         )
         .is_none());
     }

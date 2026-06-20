@@ -22,8 +22,8 @@ export function ConfirmSwitchModal({ account, switching, onCancel, onConfirm }: 
     <div className="switch-modal-backdrop" role="presentation">
       <section className="switch-modal" role="dialog" aria-modal="true" aria-labelledby="switch-modal-title">
         <header>
-          <h2 id="switch-modal-title">Switch Codex account?</h2>
-          <p>This will replace the active local Codex auth file with the selected account.</p>
+          <h2 id="switch-modal-title">切换 Codex 账号？</h2>
+          <p>这会用所选账号替换当前本地 Codex 授权文件。</p>
         </header>
 
         <div className="switch-modal-account">
@@ -34,10 +34,10 @@ export function ConfirmSwitchModal({ account, switching, onCancel, onConfirm }: 
 
         <footer>
           <Button variant="ghost" disabled={switching} onClick={onCancel}>
-            Cancel
+            取消
           </Button>
           <Button variant="primary" loading={switching} onClick={() => onConfirm(account.id)}>
-            Confirm Switch
+            确认切换
           </Button>
         </footer>
       </section>

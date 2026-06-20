@@ -14,10 +14,10 @@ async function installSystemMock(page: Page): Promise<void> {
           }
           if (command === 'get_system_snapshot') {
             return {
-              appDataDir: '/Users/smoke/Library/Application Support/codex-lite',
-              logsDir: '/Users/smoke/Library/Application Support/codex-lite/logs',
-              accountsFilePath: '/Users/smoke/Library/Application Support/codex-lite/accounts.json',
-              settingsFilePath: '/Users/smoke/Library/Application Support/codex-lite/settings.json',
+              appDataDir: '/Users/smoke/Library/Application Support/nuomi-switch',
+              logsDir: '/Users/smoke/Library/Application Support/nuomi-switch/logs',
+              accountsFilePath: '/Users/smoke/Library/Application Support/nuomi-switch/accounts.json',
+              settingsFilePath: '/Users/smoke/Library/Application Support/nuomi-switch/settings.json',
               defaultCodexHome: '/Users/smoke/.codex',
               defaultCodexAuthFile: '/Users/smoke/.codex/auth.json',
               codexAuthFileExists: true,
@@ -43,7 +43,7 @@ async function installSystemMock(page: Page): Promise<void> {
           throw {
             code: 'SMOKE_UNKNOWN_COMMAND',
             message: `Unhandled smoke command: ${command}`,
-            action: 'Add the command to the Playwright smoke mock.',
+            action: '请把该命令加入 Playwright smoke mock。',
             retryable: false,
           };
         },
@@ -69,12 +69,12 @@ test.describe('Settings and logs smoke', () => {
     await installSystemMock(page);
 
     await page.goto('/');
-    await page.getByTitle('Settings').click();
+    await page.getByTitle('设置').click();
 
-    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '设置', level: 1 })).toBeVisible();
     await expect(page.getByText('/Users/smoke/.codex/auth.json')).toBeVisible();
-    await expect(page.getByText('Found')).toBeVisible();
-    await page.getByRole('button', { name: 'Detect Codex paths' }).click();
+    await expect(page.getByText('已找到')).toBeVisible();
+    await page.getByRole('button', { name: '检测 Codex 路径' }).click();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -82,9 +82,9 @@ test.describe('Settings and logs smoke', () => {
     await installSystemMock(page);
 
     await page.goto('/');
-    await page.getByTitle('Logs').click();
+    await page.getByTitle('日志').click();
 
-    await expect(page.getByRole('heading', { name: 'Logs', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '日志', level: 1 })).toBeVisible();
     await expect(page.getByText('Loaded auth file token=[REDACTED] api_key=[REDACTED]')).toBeVisible();
     await expect(page.getByText('sk-smoke-redacted')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);

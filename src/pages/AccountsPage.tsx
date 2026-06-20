@@ -121,14 +121,14 @@ export function AccountsPage({ onOpenSessions }: AccountsPageProps) {
       {error ? <ErrorBanner error={error} /> : null}
       {lastSwitchNotice ? <div className="account-switch-notice">{lastSwitchNotice}</div> : null}
 
-      <div className="accounts-stats" aria-label="Account statistics">
+      <div className="accounts-stats" aria-label="账号统计">
         <StatCard icon={<Users size={19} />} iconColor="primary" label="总账号" value={accounts.length} meta="个账号" />
         <StatCard icon={<Crown size={19} />} iconColor="blue" label="OAuth 账号" value={oauthAccountCount} meta="个账号" />
         <StatCard icon={<KeyRound size={19} />} iconColor="green" label="API Key 账号" value={apiAccountCount} meta="个账号" />
         <StatCard icon={<History size={19} />} iconColor="purple" label="会话数" value={sessions.length} meta="条会话" />
       </div>
 
-      <div className="accounts-toolbar" aria-label="Account controls">
+      <div className="accounts-toolbar" aria-label="账号操作">
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
@@ -137,7 +137,7 @@ export function AccountsPage({ onOpenSessions }: AccountsPageProps) {
         <div className="accounts-toolbar-actions">
           <Button
             variant="secondary"
-            aria-label="Refresh all"
+            aria-label="刷新全部账号额度"
             icon={<RefreshCw size={16} />}
             loading={refreshingAll}
             disabled={loading || oauthAccountCount === 0}
@@ -145,7 +145,7 @@ export function AccountsPage({ onOpenSessions }: AccountsPageProps) {
           >
             刷新
           </Button>
-          <Button variant="primary" aria-label="Add Account" icon={<UserPlus size={16} />} onClick={openImportDrawer}>
+          <Button variant="primary" aria-label="添加账号" icon={<UserPlus size={16} />} onClick={openImportDrawer}>
             添加账号
           </Button>
         </div>
@@ -155,10 +155,10 @@ export function AccountsPage({ onOpenSessions }: AccountsPageProps) {
         {loading ? <p className="account-list-message">正在加载账号...</p> : null}
         {!loading && accounts.length === 0 ? (
           <EmptyState
-            title="No Codex accounts yet"
+            title="还没有 Codex 账号"
             description="添加当前本地 Codex 授权，或导入另一个账号。"
             action={
-              <Button variant="primary" aria-label="Add Account" icon={<UserPlus size={16} />} onClick={openImportDrawer}>
+              <Button variant="primary" aria-label="添加账号" icon={<UserPlus size={16} />} onClick={openImportDrawer}>
                 添加账号
               </Button>
             }

@@ -663,7 +663,7 @@ mod tests {
 
     #[test]
     fn reimports_camel_case_auth_file_written_by_older_builds() {
-        // Older codex-lite builds wrote camelCase; those files must still import.
+        // Older nuomi-switch builds wrote camelCase; those files must still import.
         let camel = serde_json::json!({
             "authMode": "oauth",
             "tokens": {

@@ -56,12 +56,12 @@ async function installImportMock(page: Page): Promise<void> {
               failed: [
                 {
                   source:
-                    '/Users/smoke/private/codex-lite/imports/really-long-path-that-should-not-overflow-the-import-drawer/auth-with-invalid-token.json',
+                    '/Users/smoke/private/nuomi-switch/imports/really-long-path-that-should-not-overflow-the-import-drawer/auth-with-invalid-token.json',
                   error:
                     'CODEX_AUTH_INVALID_FORMAT: The selected auth JSON has no usable credentials and should stay readable without overflowing.',
                 },
                 {
-                  source: '/Users/smoke/private/codex-lite/imports/another-invalid-auth-file.json',
+                  source: '/Users/smoke/private/nuomi-switch/imports/another-invalid-auth-file.json',
                   error: 'CODEX_TOKEN_INVALID: The ID token payload could not be decoded.',
                 },
               ],
@@ -106,7 +106,7 @@ async function installImportMock(page: Page): Promise<void> {
           throw {
             code: 'SMOKE_UNKNOWN_COMMAND',
             message: `Unhandled smoke command: ${command}`,
-            action: 'Add the command to the Playwright smoke mock.',
+            action: '请把该命令加入 Playwright smoke mock。',
             retryable: false,
           };
         },
@@ -128,7 +128,7 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
 }
 
 function addAccountConfirmButton(page: Page) {
-  return page.locator('.drawer-footer').getByRole('button', { name: 'Add account', exact: true });
+  return page.locator('.drawer-footer').getByRole('button', { name: '添加账号', exact: true });
 }
 
 test.describe('Import drawer smoke', () => {
@@ -136,13 +136,13 @@ test.describe('Import drawer smoke', () => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Add Account' }).first().click();
+    await page.getByRole('button', { name: '添加账号' }).first().click();
     await page.getByRole('tab', { name: 'API Key' }).click();
     await page.getByPlaceholder('sk-...').fill('sk-smoke-redacted');
-    await page.getByPlaceholder('Optional').first().fill('Smoke API Key');
+    await page.getByPlaceholder('可选').first().fill('Smoke API Key');
     await addAccountConfirmButton(page).click();
 
-    await expect(page.getByRole('dialog', { name: 'Add account' })).toBeHidden();
+    await expect(page.getByRole('dialog', { name: '添加账号' })).toBeHidden();
     await expect(page.locator('.account-row').filter({ hasText: 'Smoke API Key' })).toBeVisible();
   });
 
@@ -150,47 +150,47 @@ test.describe('Import drawer smoke', () => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Add Account' }).first().click();
-    await page.getByRole('tab', { name: 'OAuth login' }).click();
-    await page.getByRole('button', { name: 'Start Login' }).click();
+    await page.getByRole('button', { name: '添加账号' }).first().click();
+    await page.getByRole('tab', { name: 'OAuth 登录' }).click();
+    await page.getByRole('button', { name: '开始登录' }).click();
 
     await expect(page.getByText('oauth-smoke-login')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open auth URL' })).toHaveAttribute('href', /auth\.openai\.com/);
+    await expect(page.getByRole('link', { name: '打开授权链接' })).toHaveAttribute('href', /auth\.openai\.com/);
 
     await page
       .getByPlaceholder('http://localhost:1455/auth/callback?code=...&state=...')
       .fill('http://localhost:1455/auth/callback?code=smoke-code&state=smoke-state');
-    await page.getByRole('button', { name: 'Submit Callback' }).click();
+    await page.getByRole('button', { name: '提交回调' }).click();
 
-    await expect(page.getByRole('dialog', { name: 'Add account' })).toBeHidden();
-    await expect(page.getByText('Smoke OAuth')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '添加账号' })).toBeHidden();
+    await expect(page.getByText('smoke.oauth@example.test')).toBeVisible();
   });
 
   test('shows source-specific forms and partial failure results', async ({ page }) => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Add Account' }).first().click();
+    await page.getByRole('button', { name: '添加账号' }).first().click();
 
-    await page.getByRole('tab', { name: 'Current local auth' }).click();
-    await expect(page.getByText('Ready to add your current local Codex auth.')).toBeVisible();
+    await page.getByRole('tab', { name: '当前本地授权' }).click();
+    await expect(page.getByText('已准备好添加当前本地 Codex 授权。')).toBeVisible();
 
-    await page.getByRole('tab', { name: 'JSON text' }).click();
+    await page.getByRole('tab', { name: 'JSON 文本' }).click();
     await expect(page.getByPlaceholder('{"auth_mode":"oauth","tokens":{...}}')).toBeVisible();
     await page.getByPlaceholder('{"auth_mode":"oauth","tokens":{...}}').fill('{"authMode":"oauth"}');
     await addAccountConfirmButton(page).click();
 
-    await expect(page.getByRole('list', { name: 'Added accounts' })).toContainText('Smoke API Key');
-    await expect(page.getByText('Added 1, failed 2')).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Failed imports' })).toContainText('auth-with-invalid-token.json');
-    await expect(page.getByRole('list', { name: 'Failed imports' })).toContainText('another-invalid-auth-file.json');
+    await expect(page.getByRole('list', { name: '已添加账号' })).toContainText('Smoke API Key');
+    await expect(page.getByText('已添加 1 个，失败 2 个')).toBeVisible();
+    await expect(page.getByRole('list', { name: '导入失败' })).toContainText('auth-with-invalid-token.json');
+    await expect(page.getByRole('list', { name: '导入失败' })).toContainText('another-invalid-auth-file.json');
     await expect(page.getByText(/CODEX_AUTH_INVALID_FORMAT/)).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('tab', { name: 'Token' }).click();
-    await expect(page.getByPlaceholder('Paste id_token')).toBeVisible();
+    await expect(page.getByPlaceholder('粘贴 id_token')).toBeVisible();
 
-    await page.getByRole('tab', { name: 'JSON file' }).click();
-    await expect(page.getByRole('button', { name: 'Choose JSON' })).toBeVisible();
+    await page.getByRole('tab', { name: 'JSON 文件' }).click();
+    await expect(page.getByRole('button', { name: '选择 JSON' })).toBeVisible();
   });
 });

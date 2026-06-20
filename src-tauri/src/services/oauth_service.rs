@@ -279,7 +279,7 @@ fn handle_callback_stream(login_id: &str, stream: &mut TcpStream) -> AppResult<b
         Err(error) if error.code == "CODEX_OAUTH_CALLBACK_PATH_UNSUPPORTED" => {
             let response = http_response(
                 "404 Not Found",
-                "Codex Lite OAuth callback path was not found.",
+                "Nuomi Switch OAuth callback path was not found.",
             );
             let _ = stream.write_all(response.as_bytes());
             return Ok(false);
@@ -290,7 +290,7 @@ fn handle_callback_stream(login_id: &str, stream: &mut TcpStream) -> AppResult<b
     submit_callback_url(login_id.to_string(), callback_url)?;
     let response = http_response(
         "200 OK",
-        "Codex Lite received the OAuth callback. Return to the app and the account will be added automatically.",
+        "Nuomi Switch received the OAuth callback. Return to the app and the account will be added automatically.",
     );
     let _ = stream.write_all(response.as_bytes());
     Ok(true)

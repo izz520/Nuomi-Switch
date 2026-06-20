@@ -8,7 +8,7 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
   placeholder?: string;
 }
 
-export function SearchInput({ value, onChange, placeholder = 'Search...', ...props }: SearchInputProps) {
+export function SearchInput({ value, onChange, placeholder = '搜索...', ...props }: SearchInputProps) {
   return (
     <label className="search-input">
       <Search size={16} aria-hidden="true" />

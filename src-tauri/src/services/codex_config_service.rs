@@ -5,10 +5,10 @@ use crate::infra::atomic_write;
 use crate::models::account::{CodexAccount, CodexAuthMode};
 use crate::models::error::{AppError, AppResult};
 
-const ACTIVE_START: &str = "# >>> codex-lite active provider start";
-const ACTIVE_END: &str = "# <<< codex-lite active provider end";
-const PROVIDER_START: &str = "# >>> codex-lite api provider start";
-const PROVIDER_END: &str = "# <<< codex-lite api provider end";
+const ACTIVE_START: &str = "# >>> nuomi-switch active provider start";
+const ACTIVE_END: &str = "# <<< nuomi-switch active provider end";
+const PROVIDER_START: &str = "# >>> nuomi-switch api provider start";
+const PROVIDER_END: &str = "# <<< nuomi-switch api provider end";
 pub const API_PROVIDER_ID: &str = "codex_local_access";
 pub const DEFAULT_PROVIDER_ID: &str = "openai";
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
@@ -158,7 +158,7 @@ fn build_active_provider_block(previous_model_provider: Option<&str>) -> String 
 fn build_api_provider_block(account: &CodexAccount, base_url: &str, api_key: &str) -> String {
     let name = account.display_name.trim();
     let provider_name = if name.is_empty() {
-        "Codex Lite API Key"
+        "Nuomi Switch API Key"
     } else {
         name
     };
@@ -392,7 +392,7 @@ mod tests {
 
     #[test]
     fn clear_active_provider_removes_previous_model_provider() {
-        let input = "# >>> codex-lite active provider start\n# previous_model_provider = \"aimami\"\nmodel_provider = \"codex_local_access\"\n# <<< codex-lite active provider end\nmodel = \"gpt-5.5\"\n";
+        let input = "# >>> nuomi-switch active provider start\n# previous_model_provider = \"aimami\"\nmodel_provider = \"codex_local_access\"\n# <<< nuomi-switch active provider end\nmodel = \"gpt-5.5\"\n";
 
         let output = clear_active_provider(input);
 
@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn apply_api_provider_cleans_duplicate_marker_blocks() {
-        let input = "# >>> codex-lite active provider start\n# <<< codex-lite active provider end\n# >>> codex-lite active provider start\n# <<< codex-lite active provider end\n# <<< codex-lite active provider end\nmodel = \"gpt-5.5\"\n";
+        let input = "# >>> nuomi-switch active provider start\n# <<< nuomi-switch active provider end\n# >>> nuomi-switch active provider start\n# <<< nuomi-switch active provider end\n# <<< nuomi-switch active provider end\nmodel = \"gpt-5.5\"\n";
 
         let output = apply_api_provider(
             input,
@@ -427,13 +427,13 @@ mod tests {
 
         assert_eq!(
             output
-                .matches("# >>> codex-lite active provider start")
+                .matches("# >>> nuomi-switch active provider start")
                 .count(),
             1
         );
         assert_eq!(
             output
-                .matches("# <<< codex-lite active provider end")
+                .matches("# <<< nuomi-switch active provider end")
                 .count(),
             1
         );
@@ -447,13 +447,13 @@ mod tests {
 
     #[test]
     fn clear_active_provider_removes_api_provider_block() {
-        let input = "# >>> codex-lite active provider start\n# previous_model_provider = \"openai\"\nmodel_provider = \"codex_local_access\"\n# <<< codex-lite active provider end\nmodel = \"gpt-5.5\"\n# >>> codex-lite api provider start\n[model_providers.codex_local_access]\nbase_url = \"https://api.yaso11.tech/v1\"\n# <<< codex-lite api provider end\n";
+        let input = "# >>> nuomi-switch active provider start\n# previous_model_provider = \"openai\"\nmodel_provider = \"codex_local_access\"\n# <<< nuomi-switch active provider end\nmodel = \"gpt-5.5\"\n# >>> nuomi-switch api provider start\n[model_providers.codex_local_access]\nbase_url = \"https://api.yaso11.tech/v1\"\n# <<< nuomi-switch api provider end\n";
 
         let output = clear_active_provider(input);
 
         assert!(!output.contains("model_provider = \"openai\""));
         assert!(!output.contains("[model_providers.codex_local_access]"));
-        assert!(!output.contains("codex-lite api provider"));
+        assert!(!output.contains("nuomi-switch api provider"));
     }
 
     #[test]

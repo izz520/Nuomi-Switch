@@ -16,7 +16,7 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
   return (
-    <div className="tabs" role="tablist" aria-label="Navigation tabs">
+    <div className="tabs" role="tablist" aria-label="导航标签">
       {tabs.map((tab) => (
         <button
           key={tab.id}

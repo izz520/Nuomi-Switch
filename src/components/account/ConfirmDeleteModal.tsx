@@ -22,8 +22,8 @@ export function ConfirmDeleteModal({ account, deleting, onCancel, onConfirm }: C
     <div className="delete-modal-backdrop" role="presentation">
       <section className="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
         <header>
-          <h2 id="delete-modal-title">Remove this account?</h2>
-          <p>This removes the saved account from Codex Lite. It does not sign you out elsewhere.</p>
+          <h2 id="delete-modal-title">删除这个账号？</h2>
+          <p>这只会从 Nuomi Switch 删除保存的账号，不会让你在其他地方退出登录。</p>
         </header>
 
         <div className="delete-modal-account">
@@ -34,17 +34,16 @@ export function ConfirmDeleteModal({ account, deleting, onCancel, onConfirm }: C
 
         {account.isCurrent ? (
           <p className="delete-modal-warning" role="alert">
-            This is the current account. Removing it here leaves the active local Codex auth file in place; switch to
-            another account if you no longer want to use it.
+            这是当前账号。删除保存记录不会清空正在使用的本地 Codex 授权文件；如果不想继续使用它，请先切换到其他账号。
           </p>
         ) : null}
 
         <footer>
           <Button variant="ghost" disabled={deleting} onClick={onCancel}>
-            Cancel
+            取消
           </Button>
           <Button variant="danger" loading={deleting} onClick={() => onConfirm(account.id)}>
-            Remove account
+            删除账号
           </Button>
         </footer>
       </section>

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export type ThemePreference = 'light' | 'dark' | 'auto';
 export type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'codex-lite-theme';
+const STORAGE_KEY = 'nuomi-switch-theme';
 
 function systemTheme(): ResolvedTheme {
   if (typeof window === 'undefined' || !window.matchMedia) return 'light';

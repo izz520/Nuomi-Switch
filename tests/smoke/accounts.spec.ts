@@ -10,7 +10,7 @@ const oauthAccount = {
   displayName: 'Work Codex OAuth',
   email: 'very.long.codex.user.name.for.layout.validation@example-enterprise-domain.test',
   authMode: 'oauth',
-  accountId: 'acct_team_codex_lite_smoke_long_identifier_001',
+  accountId: 'acct_team_nuomi_switch_smoke_long_identifier_001',
   userId: 'user_smoke_001',
   planType: 'pro',
   apiBaseUrl: null,
@@ -87,7 +87,7 @@ async function installTauriMock(page: Page, options: TauriMockOptions): Promise<
           throw {
             code: 'SMOKE_UNKNOWN_COMMAND',
             message: `Unhandled smoke command: ${command}`,
-            action: 'Add the command to the Playwright smoke mock.',
+            action: '请把该命令加入 Playwright smoke mock。',
             retryable: false,
           };
         },
@@ -114,10 +114,10 @@ test.describe('Accounts page smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: 'No Codex accounts yet' })).toBeVisible();
-    await expect(page.getByText('未检测到当前 Codex 账号')).toBeVisible();
-    await page.getByRole('button', { name: 'Add Account' }).first().click();
-    await expect(page.getByRole('dialog', { name: 'Add account' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '还没有 Codex 账号' })).toBeVisible();
+    await expect(page.getByText('添加当前本地 Codex 授权')).toBeVisible();
+    await page.getByRole('button', { name: '添加账号' }).first().click();
+    await expect(page.getByRole('dialog', { name: '添加账号' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -129,24 +129,24 @@ test.describe('Accounts page smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: '统计信息' })).toBeVisible();
-    const oauthRow = page.locator('.account-row').filter({ hasText: 'Work Codex OAuth' });
+    await expect(page.getByLabel('账号统计')).toContainText('总账号');
+    const oauthRow = page.locator('.account-row').filter({ hasText: oauthAccount.email });
     const apiKeyRow = page.locator('.account-row').filter({ hasText: 'API Key Only' });
 
     await expect(oauthRow).toBeVisible();
     await expect(apiKeyRow).toBeVisible();
-    await expect(page.getByText('当前账号', { exact: true })).toBeVisible();
+    await expect(oauthRow.getByRole('button', { name: '当前账号' })).toBeVisible();
 
     // The current account starts expanded, so its detail quota is visible.
     await expect(oauthRow.getByText('5h')).toBeVisible();
-    await expect(oauthRow.getByText('Weekly')).toBeVisible();
+    await expect(oauthRow.getByText('每周')).toBeVisible();
     await expect(oauthRow.getByText('重置机会')).toBeVisible();
     await expect(oauthRow.getByText('2 次')).toBeVisible();
-    await expect(oauthRow.getByText('acct_team_codex_lite_smoke_long_identifier_001')).toBeVisible();
+    await expect(oauthRow.getByText('acct_team_nuomi_switch_smoke_long_identifier_001')).toBeVisible();
 
     await apiKeyRow.locator('.account-summary').click();
     await expect(apiKeyRow.getByText('API Key', { exact: true })).toBeVisible();
-    await expect(apiKeyRow.getByRole('button', { name: 'Switch account' })).toBeVisible();
+    await expect(apiKeyRow.getByRole('button', { name: '切换账号' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -158,16 +158,16 @@ test.describe('Accounts page smoke', () => {
 
     await page.goto('/');
 
-    const oauthRow = page.locator('.account-row').filter({ hasText: 'Work Codex OAuth' });
+    const oauthRow = page.locator('.account-row').filter({ hasText: oauthAccount.email });
     const apiKeyRow = page.locator('.account-row').filter({ hasText: 'API Key Only' });
     await expect(oauthRow).toBeVisible();
     await expect(apiKeyRow).toBeVisible();
 
-    await page.getByLabel('Search accounts').fill('API Key Only');
+    await page.getByLabel('搜索账号').fill('API Key Only');
     await expect(apiKeyRow).toBeVisible();
     await expect(oauthRow).toHaveCount(0);
 
-    await page.getByLabel('Search accounts').fill('no-such-account');
+    await page.getByLabel('搜索账号').fill('no-such-account');
     await expect(page.getByText('没有匹配')).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
@@ -182,14 +182,14 @@ test.describe('Accounts page smoke', () => {
 
     const apiKeyRow = page.locator('.account-row').filter({ hasText: 'API Key Only' });
     await apiKeyRow.locator('.account-summary').click();
-    await apiKeyRow.getByRole('button', { name: 'Delete account' }).click();
+    await apiKeyRow.getByRole('button', { name: '删除账号' }).click();
 
-    const dialog = page.getByRole('dialog', { name: 'Remove this account?' });
+    const dialog = page.getByRole('dialog', { name: '删除这个账号？' });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: 'Remove account' }).click();
+    await dialog.getByRole('button', { name: '删除账号' }).click();
 
     await expect(page.locator('.account-row').filter({ hasText: 'API Key Only' })).toHaveCount(0);
-    await expect(page.locator('.account-row').filter({ hasText: 'Work Codex OAuth' })).toBeVisible();
+    await expect(page.locator('.account-row').filter({ hasText: oauthAccount.email })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -234,9 +234,9 @@ test.describe('Accounts page smoke', () => {
       await page.keyboard.press('Tab');
     }
 
-    expect(activeLabels.some((label) => label.includes('添加账号') || label.includes('Add Account'))).toBe(true);
-    expect(activeLabels.some((label) => label.includes('Refresh quota') || label.includes('Switch account'))).toBe(true);
-    expect(activeLabels.some((label) => label.includes('Settings') || label.includes('设置'))).toBe(true);
+    expect(activeLabels.some((label) => label.includes('添加账号'))).toBe(true);
+    expect(activeLabels.some((label) => label.includes('刷新额度') || label.includes('切换账号'))).toBe(true);
+    expect(activeLabels.some((label) => label.includes('设置'))).toBe(true);
     await expectNoHorizontalOverflow(page);
   });
 });

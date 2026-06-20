@@ -149,7 +149,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
     <>
       {error ? <ErrorBanner error={error} /> : null}
 
-      <div className="sessions-stats" aria-label="Session statistics">
+      <div className="sessions-stats" aria-label="会话统计">
         <article>
           <strong>{sessions.length}</strong>
           <span>全部会话</span>
@@ -172,7 +172,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
           <label className="session-search">
             <Search size={16} aria-hidden="true" />
             <input
-              aria-label="Search sessions"
+              aria-label="搜索会话"
               placeholder="搜索项目、标题、路径或 provider"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -237,7 +237,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
                     </span>
                     <span className="session-group-title">
                       <strong>{group.project}</strong>
-                      <span>{group.cwd || 'Unknown path'}</span>
+                      <span>{group.cwd || '未知路径'}</span>
                     </span>
                   </button>
                   <div className="session-group-meta">
@@ -259,7 +259,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
                         <tr>
                           <th className="select-cell">
                             <input
-                              aria-label={`Select all sessions in ${group.project}`}
+                              aria-label={`选择 ${group.project} 下的全部会话`}
                               checked={groupSelected}
                               type="checkbox"
                               onChange={() => toggleGroupSelection(group)}
@@ -275,7 +275,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
                           <tr key={session.id} className={selectedSet.has(session.id) ? 'selected' : ''}>
                             <td className="select-cell">
                               <input
-                                aria-label={`Select ${session.title}`}
+                                aria-label={`选择 ${session.title}`}
                                 checked={selectedSet.has(session.id)}
                                 type="checkbox"
                                 onChange={() => toggleSession(session.id)}
@@ -296,7 +296,7 @@ export function SessionsPage({ onBack }: SessionsPageProps) {
                                 {session.archived ? (
                                   <span className="session-archive">
                                     <Archive size={13} />
-                                    archived
+                                    已归档
                                   </span>
                                 ) : null}
                               </div>

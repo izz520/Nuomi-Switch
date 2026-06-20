@@ -16,7 +16,7 @@ impl TestEnv {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         let root =
-            std::env::temp_dir().join(format!("codex-lite-test-{}-{}", name, uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("nuomi-switch-test-{}-{}", name, uuid::Uuid::new_v4()));
         let data_dir = root.join("data");
         let codex_home = root.join("codex-home");
         std::fs::create_dir_all(&data_dir).expect("test data dir should be created");

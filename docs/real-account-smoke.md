@@ -1,92 +1,92 @@
-# Real Account Smoke Checklist
+# 真实账号烟雾测试清单
 
-Use this checklist only on a private machine with Codex credentials you control. Do not commit, upload, or paste real tokens, API keys, auth files, app data, backups, screenshots with secrets, or logs that have not been reviewed.
+只在你掌控 Codex 凭据的私有机器上使用这份清单。不要提交、上传或粘贴真实 Token、API Key、授权文件、应用数据、备份、包含秘密的截图，或未经检查的日志。
 
-## Scope
+## 范围
 
-This smoke pass verifies behavior that mocked Web UI tests cannot prove:
+这轮 smoke 验证 mock Web UI 测试无法证明的行为：
 
-- Import from the current local `~/.codex/auth.json`.
-- Import from a copied auth JSON file.
-- Switch active account and restore from backup if needed.
-- Refresh quota against the live quota endpoint.
-- Complete OAuth token exchange through the manual callback fallback.
-- Complete OAuth token exchange through the automatic localhost callback when port `1455` is available.
-- Confirm dialog and opener capabilities in the native Tauri shell.
+- 从当前本地 `~/.codex/auth.json` 导入账号。
+- 从复制出来的授权 JSON 文件导入账号。
+- 切换当前账号，并在需要时从备份恢复。
+- 调用真实额度端点刷新额度。
+- 通过手动回调 fallback 完成 OAuth token exchange。
+- 在 `1455` 端口可用时，通过自动 localhost 回调完成 OAuth token exchange。
+- 验证原生 Tauri shell 中的确认弹窗、打开目录和文件选择能力。
 
-## Before You Start
+## 开始前
 
-1. Back up the current Codex auth file:
+1. 备份当前 Codex 授权文件：
 
    ```bash
-   cp ~/.codex/auth.json ~/.codex/auth.json.before-codex-lite-smoke
+   cp ~/.codex/auth.json ~/.codex/auth.json.before-nuomi-switch-smoke
    ```
 
-2. Start the native app:
+2. 启动原生应用：
 
    ```bash
    pnpm tauri:dev
    ```
 
-3. Keep `codex-lite/docs/security.md` open and treat every local app data file as sensitive.
+3. 打开 `nuomi-switch/docs/security.md`，并把所有本地应用数据文件都视为敏感数据。
 
-## Native Capability Checks
+## 原生能力检查
 
-- Open Settings.
-- Click `Open data directory`.
-- Click `Open logs`.
-- Open the import drawer.
-- Choose JSON file import and confirm that the native file dialog opens.
+- 打开设置页。
+- 点击 `打开数据目录`。
+- 点击 `打开日志`。
+- 打开导入抽屉。
+- 选择 JSON 文件导入，并确认原生文件选择器能打开。
 
-Expected result: each native opener/dialog action works without a Tauri permission error.
+期望结果：每个原生打开目录/对话框动作都能正常工作，没有 Tauri 权限错误。
 
-## Import Checks
+## 导入检查
 
-- Import current local auth.
-- Copy `~/.codex/auth.json` to a private temporary path and import it as a JSON file.
-- Confirm duplicate imports are shown as existing in batch preview.
-- Import one synthetic API key account using a placeholder value you are comfortable deleting afterward.
+- 导入当前本地授权。
+- 将 `~/.codex/auth.json` 复制到私有临时路径，并作为 JSON 文件导入。
+- 确认重复导入在批量预览中显示为已存在。
+- 使用一个之后可以删除的占位值导入合成 API Key 账号。
 
-Expected result: valid accounts are added once, duplicates are not selected by default, and failed files do not block successful files.
+期望结果：有效账号只添加一次；重复项默认不被选中；失败文件不会阻断成功文件。
 
-## Switch Checks
+## 切换检查
 
-- Select a non-current imported account.
-- Confirm the switch modal.
-- Verify `~/.codex/auth.json` changed.
-- Verify a backup file was created under the Codex Lite `backups/` directory.
+- 选择一个非当前导入账号。
+- 确认切换弹窗。
+- 验证 `~/.codex/auth.json` 已变化。
+- 验证 Nuomi Switch 的 `backups/` 目录下生成了备份文件。
 
-Expected result: switching succeeds only after confirmation and leaves a recoverable backup.
+期望结果：切换只会在确认后执行，并留下可恢复备份。
 
-## Quota Checks
+## 额度检查
 
-- Select an OAuth account.
-- Click `Refresh quota`.
-- Record whether hourly and weekly quota values update.
-- Temporarily disconnect the network or use an expired account if available, then refresh again.
+- 选择一个 OAuth 账号。
+- 点击 `刷新额度`。
+- 记录小时和周额度是否更新。
+- 如果可行，临时断网或使用过期账号后再次刷新。
 
-Expected result: successful refresh stores quota. Failed refresh keeps the previous value and marks it stale with an actionable error.
+期望结果：刷新成功会保存额度；刷新失败会保留旧值，并用可操作错误提示标记为旧数据。
 
-## OAuth Checks
+## OAuth 检查
 
-- Select `OAuth login` in the import drawer.
-- Start login.
-- Complete authorization in the browser.
-- If the automatic callback listener is running, return to Codex Lite after browser authorization.
-- If automatic callback is unavailable, paste the full callback URL and submit callback.
-- Confirm import.
+- 在导入抽屉选择 `OAuth 登录`。
+- 开始登录。
+- 在浏览器完成授权。
+- 如果自动回调监听运行中，授权后返回 Nuomi Switch。
+- 如果自动回调不可用，粘贴完整回调 URL 并提交回调。
+- 确认导入。
 
-Expected result: a new OAuth account is stored without exposing tokens in the UI or logs. Manual callback remains available when the local listener cannot bind port `1455`.
+期望结果：新 OAuth 账号被保存，UI 和日志中不暴露 Token。监听器无法绑定 `1455` 端口时，手动回调仍可使用。
 
-## After You Finish
+## 结束后
 
-1. Restore the original auth file if needed:
+1. 如有需要，恢复原授权文件：
 
    ```bash
-   cp ~/.codex/auth.json.before-codex-lite-smoke ~/.codex/auth.json
+   cp ~/.codex/auth.json.before-nuomi-switch-smoke ~/.codex/auth.json
    ```
 
-2. Review logs before sharing any result.
-3. Report only pass/fail, OS version, app commit/version, and redacted error codes/messages.
+2. 分享任何结果前先检查日志。
+3. 只报告通过/失败、OS 版本、应用 commit/版本，以及已脱敏的错误码/错误消息。
 
-Never attach real `auth.json`, `accounts.json`, backup files, OAuth callback URLs, tokens, API keys, or raw logs to a public issue.
+不要把真实 `auth.json`、`accounts.json`、备份文件、OAuth 回调 URL、Token、API Key 或原始日志附加到公开 issue。

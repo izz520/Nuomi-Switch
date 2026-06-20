@@ -147,7 +147,7 @@ export function AccountRow({
 }: AccountRowProps) {
   const [copiedField, setCopiedField] = useState<'apiKey' | 'apiBaseUrl' | null>(null);
   const quotaUnsupported = account.authMode === 'api_key';
-  const planText = quotaUnsupported ? 'API' : account.planType ?? 'Free';
+  const planText = quotaUnsupported ? 'API' : account.planType ?? '免费';
   const hourly = account.quota?.hourlyRemainingPercent;
   const weekly = account.quota?.weeklyRemainingPercent;
   const normalizedHourly = typeof hourly === 'number' ? Math.max(0, Math.min(100, hourly)) : 0;
@@ -199,12 +199,12 @@ export function AccountRow({
                   API Key
                 </span>
                 <span className="api-account-field-actions">
-                  <button type="button" aria-label="Show API key" disabled>
+                  <button type="button" aria-label="显示 API Key" disabled>
                     <Eye size={13} />
                   </button>
                   <button
                     type="button"
-                    aria-label={copiedField === 'apiKey' ? 'API key copied' : 'Copy API key'}
+                    aria-label={copiedField === 'apiKey' ? 'API Key 已复制' : '复制 API Key'}
                     className={copiedField === 'apiKey' ? 'copied' : ''}
                     title={copiedField === 'apiKey' ? '复制成功' : '复制 API Key'}
                     disabled={!account.apiKey}
@@ -223,7 +223,7 @@ export function AccountRow({
                 <span className="api-account-field-actions">
                   <button
                     type="button"
-                    aria-label={copiedField === 'apiBaseUrl' ? 'API base URL copied' : 'Copy API base URL'}
+                    aria-label={copiedField === 'apiBaseUrl' ? 'API 基础地址已复制' : '复制 API 基础地址'}
                     className={copiedField === 'apiBaseUrl' ? 'copied' : ''}
                     title={copiedField === 'apiBaseUrl' ? '复制成功' : '复制基础地址'}
                     onClick={() => void copyField('apiBaseUrl', getApiBaseUrl(account))}
@@ -276,7 +276,7 @@ export function AccountRow({
                 <span className="quota-line">
                   <span>
                     <CalendarDays size={16} />
-                    Weekly
+                    每周
                   </span>
                   <strong>{quotaUnsupported ? '可用' : formatQuotaLabel(weekly)}</strong>
                 </span>
@@ -324,7 +324,7 @@ export function AccountRow({
 
       <div className="account-card-actions">
         <IconButton
-          label={account.isCurrent ? 'Current account' : 'Switch account'}
+          label={account.isCurrent ? '当前账号' : '切换账号'}
           icon={switching ? <RefreshCw className="spin-icon" size={16} /> : <Play size={16} />}
           active={account.isCurrent}
           disabled={account.isCurrent || switching}
@@ -332,17 +332,17 @@ export function AccountRow({
         />
         {!quotaUnsupported ? (
           <IconButton
-            label="Refresh quota"
+            label="刷新额度"
             icon={refreshing ? <RefreshCw className="spin-icon" size={16} /> : <RefreshCw size={16} />}
             disabled={refreshing}
             onClick={() => onRefreshQuota(account.id)}
           />
         ) : null}
         {quotaUnsupported ? (
-          <IconButton label="Edit API account" icon={<Pencil size={16} />} onClick={() => onEditApiAccount(account)} />
+          <IconButton label="编辑 API 账号" icon={<Pencil size={16} />} onClick={() => onEditApiAccount(account)} />
         ) : null}
         <IconButton
-          label="Delete account"
+          label="删除账号"
           icon={deleting ? <RefreshCw className="spin-icon" size={16} /> : <Trash2 size={16} />}
           disabled={deleting}
           onClick={() => onDelete(account.id)}

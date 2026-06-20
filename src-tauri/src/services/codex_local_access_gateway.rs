@@ -22,7 +22,7 @@ pub const GATEWAY_PROVIDER_BASE_URL: &str = "http://127.0.0.1:14567/v1";
 const GATEWAY_HOST: &str = "127.0.0.1";
 const GATEWAY_PORT: u16 = 14567;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const GATEWAY_STATE_FILE: &str = "codex_lite_gateway_state.json";
+const GATEWAY_STATE_FILE: &str = "nuomi_switch_gateway_state.json";
 const MAX_REQUEST_BYTES: usize = 32 * 1024 * 1024;
 const RESPONSE_PATH: &str = "/v1/responses";
 

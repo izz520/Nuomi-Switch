@@ -56,7 +56,7 @@ export function LogsPage() {
           </div>
         </div>
         {error ? <p className="muted">{error}</p> : null}
-        <div className="log-filter-tabs" role="tablist" aria-label="Log level filter">
+        <div className="log-filter-tabs" role="tablist" aria-label="日志级别筛选">
           {logFilters.map((item) => (
             <button
               aria-selected={filter === item.value}

@@ -43,8 +43,8 @@ pub fn get_account(account_id: &str) -> AppResult<CodexAccount> {
         .ok_or_else(|| {
             AppError::new(
                 "CODEX_ACCOUNT_NOT_FOUND",
-                "Codex account was not found.",
-                "Refresh accounts or import it again.",
+                "未找到 Codex 账号。",
+                "请刷新账号列表，或重新导入该账号。",
             )
         })
 }
@@ -82,15 +82,15 @@ fn validate_bound_oauth_account(
     if api_key_account.auth_mode != CodexAuthMode::ApiKey {
         return Err(AppError::new(
             "CODEX_ACCOUNT_NOT_API_KEY",
-            "Only API Key accounts can bind an OAuth account.",
-            "Choose an API Key account and try again.",
+            "只有 API Key 账号可以绑定 OAuth 账号。",
+            "请选择一个 API Key 账号后重试。",
         ));
     }
     if api_key_account.id == bound_oauth_account_id {
         return Err(AppError::new(
             "CODEX_BINDING_SELF_REFERENCE",
-            "An API Key account cannot bind itself as OAuth.",
-            "Choose a different OAuth account.",
+            "API Key 账号不能把自己绑定为 OAuth 账号。",
+            "请选择另一个 OAuth 账号。",
         ));
     }
     let oauth_account = accounts
@@ -100,22 +100,22 @@ fn validate_bound_oauth_account(
         .ok_or_else(|| {
             AppError::new(
                 "CODEX_BOUND_OAUTH_NOT_FOUND",
-                "Bound OAuth account was not found.",
-                "Refresh accounts or import the OAuth account again.",
+                "未找到绑定的 OAuth 账号。",
+                "请刷新账号列表，或重新导入该 OAuth 账号。",
             )
         })?;
     if !matches!(oauth_account.auth_mode, CodexAuthMode::OAuth) {
         return Err(AppError::new(
             "CODEX_BOUND_ACCOUNT_NOT_OAUTH",
-            "Bound account must be an OAuth account.",
-            "Choose an OAuth account with a refresh token.",
+            "绑定目标必须是 OAuth 账号。",
+            "请选择带有 refresh token 的 OAuth 账号。",
         ));
     }
     if !account_has_refresh_token(&oauth_account) {
         return Err(AppError::new(
             "CODEX_BOUND_OAUTH_MISSING_REFRESH_TOKEN",
-            "Bound OAuth account has no refresh token.",
-            "Re-import this OAuth account or sign in again.",
+            "绑定的 OAuth 账号没有 refresh token。",
+            "请重新导入该 OAuth 账号，或重新登录。",
         ));
     }
     Ok(oauth_account)
@@ -155,8 +155,8 @@ async fn sync_active_api_account(account: &CodexAccount) -> AppResult<()> {
     let auth_content = serde_json::to_vec_pretty(&auth_file).map_err(|err| {
         AppError::new(
             "CODEX_AUTH_SERIALIZE_FAILED",
-            format!("Failed to serialize updated API account auth file: {}", err),
-            "Check the API account fields and try again.",
+            format!("序列化更新后的 API 账号授权文件失败：{}", err),
+            "请检查 API 账号字段后重试。",
         )
     })?;
     let auth_path = paths::default_codex_auth_file()?;
@@ -195,8 +195,8 @@ pub async fn update_api_key_account(
     if trimmed_api_key.is_empty() {
         return Err(AppError::new(
             "CODEX_API_KEY_EMPTY",
-            "API key cannot be empty.",
-            "Paste a valid API key.",
+            "API Key 不能为空。",
+            "请粘贴有效的 API Key。",
         ));
     }
 
@@ -209,16 +209,16 @@ pub async fn update_api_key_account(
         .ok_or_else(|| {
             AppError::new(
                 "CODEX_ACCOUNT_NOT_FOUND",
-                "Codex account was not found.",
-                "Refresh accounts or import it again.",
+                "未找到 Codex 账号。",
+                "请刷新账号列表，或重新导入该账号。",
             )
         })?;
 
     if account.auth_mode != CodexAuthMode::ApiKey {
         return Err(AppError::new(
             "CODEX_ACCOUNT_NOT_API_KEY",
-            "Only API Key accounts can be edited here.",
-            "Choose an API Key account and try again.",
+            "这里只能编辑 API Key 账号。",
+            "请选择一个 API Key 账号后重试。",
         ));
     }
 
@@ -251,16 +251,16 @@ pub async fn update_api_key_bound_oauth_account(
         .ok_or_else(|| {
             AppError::new(
                 "CODEX_ACCOUNT_NOT_FOUND",
-                "Codex account was not found.",
-                "Refresh accounts or import it again.",
+                "未找到 Codex 账号。",
+                "请刷新账号列表，或重新导入该账号。",
             )
         })?;
 
     if file.accounts[index].auth_mode != CodexAuthMode::ApiKey {
         return Err(AppError::new(
             "CODEX_ACCOUNT_NOT_API_KEY",
-            "Only API Key accounts can bind an OAuth account.",
-            "Choose an API Key account and try again.",
+            "只有 API Key 账号可以绑定 OAuth 账号。",
+            "请选择一个 API Key 账号后重试。",
         ));
     }
 
@@ -316,8 +316,8 @@ pub fn mark_current(account_id: &str) -> AppResult<CodexAccountView> {
     let account = selected.ok_or_else(|| {
         AppError::new(
             "CODEX_ACCOUNT_NOT_FOUND",
-            "Codex account was not found.",
-            "Refresh accounts or import it again.",
+            "未找到 Codex 账号。",
+            "请刷新账号列表，或重新导入该账号。",
         )
     })?;
     file.current_account_id = Some(account_id.to_string());

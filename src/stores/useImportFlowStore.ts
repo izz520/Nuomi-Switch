@@ -498,11 +498,11 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
         result = singleAccountResult(await importCodexFromLocal());
       } else if (state.source === 'jsonFile' || state.source === 'batchFiles') {
         if (state.filePaths.length === 0) {
-          throw appError('IMPORT_FILES_EMPTY', 'No JSON file selected.', 'Choose at least one Codex auth JSON file.');
+          throw appError('IMPORT_FILES_EMPTY', '未选择 JSON 文件。', '请至少选择一个 Codex 授权 JSON 文件。');
         }
         if (state.batchPreview) {
           if (state.batchSelectedItemIds.length === 0) {
-            throw appError('IMPORT_BATCH_EMPTY', 'No importable item selected.', 'Select at least one importable account.');
+            throw appError('IMPORT_BATCH_EMPTY', '未选择可导入项目。', '请至少选择一个可导入账号。');
           }
           result = await confirmCodexBatchImport(state.batchPreview.sessionId, state.batchSelectedItemIds);
         } else {

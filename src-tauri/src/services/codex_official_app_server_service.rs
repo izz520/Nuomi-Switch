@@ -73,7 +73,7 @@ pub fn rebuild_thread_metadata(codex_home: &Path) -> AppResult<()> {
                 "id": 1,
                 "params": {
                     "clientInfo": {
-                        "name": "codex-lite",
+                        "name": "nuomi-switch",
                         "version": env!("CARGO_PKG_VERSION"),
                     },
                     "capabilities": null,

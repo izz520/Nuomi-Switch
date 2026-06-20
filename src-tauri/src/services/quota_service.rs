@@ -16,7 +16,7 @@ const SUBSCRIPTION_ACCOUNTS_CHECK_URL: &str =
     "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27";
 const SUBSCRIPTIONS_URL: &str = "https://chatgpt.com/backend-api/subscriptions";
 const CHATGPT_WEB_REFERER: &str = "https://chatgpt.com/";
-const CHATGPT_WEB_USER_AGENT: &str = "Mozilla/5.0 AppleWebKit/537.36 CodexLite/0.1";
+const CHATGPT_WEB_USER_AGENT: &str = "Mozilla/5.0 AppleWebKit/537.36 NuomiSwitch/0.1";
 const HTTP_ERROR_BODY_DISPLAY_MAX_CHARS: usize = 1200;
 
 #[derive(Debug, Deserialize)]

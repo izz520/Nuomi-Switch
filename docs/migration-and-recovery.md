@@ -1,18 +1,18 @@
-# Migration and Recovery
+# 迁移与恢复
 
-This document describes how Codex Lite stores local data and how to recover from damaged local JSON files.
+本文说明 Nuomi Switch 如何存储本地数据，以及本地 JSON 文件损坏时如何恢复。
 
-## Storage Model
+## 存储模型
 
-Codex Lite stores app-owned data in the platform app data directory:
+Nuomi Switch 的应用数据存放在平台应用数据目录：
 
 ```text
-macOS:   ~/Library/Application Support/codex-lite
-Windows: %APPDATA%\codex-lite
-Linux:   $XDG_DATA_HOME/codex-lite or ~/.local/share/codex-lite
+macOS:   ~/Library/Application Support/nuomi-switch
+Windows: %APPDATA%\nuomi-switch
+Linux:   $XDG_DATA_HOME/nuomi-switch or ~/.local/share/nuomi-switch
 ```
 
-The most important files are:
+最重要的文件和目录：
 
 ```text
 accounts.json
@@ -22,82 +22,82 @@ logs/
 batch-import-sessions/
 ```
 
-Codex itself uses:
+Codex 自身使用：
 
 ```text
 ~/.codex/auth.json
 ```
 
-Codex Lite may read and write that file when importing the current local auth or switching the active account.
+导入当前本地授权或切换当前账号时，Nuomi Switch 可能读取和写入该文件。
 
 ## schemaVersion
 
-Local app data uses a `schemaVersion` field. The current first-stage schema version is:
+本地应用数据使用 `schemaVersion` 字段。当前第一阶段 schema 版本为：
 
 ```text
 1.0.0
 ```
 
-At this stage, migrations are intentionally conservative. If `accounts.json` or `settings.json` cannot be parsed, Codex Lite should report a structured error instead of silently overwriting the damaged file.
+现阶段迁移策略保持保守。如果 `accounts.json` 或 `settings.json` 无法解析，Nuomi Switch 应报告结构化错误，而不是静默覆盖损坏文件。
 
-## Backup Locations
+## 备份位置
 
-Before switching the active Codex account, Codex Lite backs up the previous `~/.codex/auth.json` under the app data `backups/` directory.
+切换当前 Codex 账号前，Nuomi Switch 会把原 `~/.codex/auth.json` 备份到应用数据目录下的 `backups/`。
 
-Keep both of these locations in mind during recovery:
+恢复时请同时关注这两个位置：
 
 ```text
-Codex auth:      ~/.codex/auth.json
-Codex Lite data: platform app data directory/codex-lite
+Codex auth:       ~/.codex/auth.json
+Nuomi Switch 数据: 平台应用数据目录/nuomi-switch
 ```
 
-The Settings page shows the exact detected paths for the current machine.
+设置页会显示当前机器检测到的实际路径。
 
-## Recover accounts.json
+## 恢复 accounts.json
 
-If Codex Lite reports `STORAGE_INVALID_FORMAT` for `accounts.json`:
+如果 Nuomi Switch 对 `accounts.json` 报告 `STORAGE_INVALID_FORMAT`：
 
-1. Quit Codex Lite.
-2. Open the Codex Lite app data directory shown in Settings, or use the platform path listed above.
-3. Copy `accounts.json` to a safe private location.
-4. Rename the damaged file to `accounts.json.broken`.
-5. Start Codex Lite again.
-6. Re-import accounts from `~/.codex/auth.json`, a known-good JSON file, OAuth login, token fields, or API key fields.
+1. 退出 Nuomi Switch。
+2. 打开设置页显示的 Nuomi Switch 应用数据目录，或使用上文列出的平台路径。
+3. 把 `accounts.json` 复制到安全的私有位置。
+4. 将损坏文件重命名为 `accounts.json.broken`。
+5. 重新启动 Nuomi Switch。
+6. 从 `~/.codex/auth.json`、可信 JSON 文件、OAuth 登录、Token 字段或 API Key 字段重新导入账号。
 
-Do not paste real tokens or API keys into public issues while asking for help. Redact the file before sharing any excerpt.
+寻求帮助时不要把真实 Token 或 API Key 粘贴到公开 issue。分享任何片段前都必须脱敏。
 
-## Recover settings.json
+## 恢复 settings.json
 
-If Codex Lite reports `SETTINGS_INVALID_FORMAT` for `settings.json`:
+如果 Nuomi Switch 对 `settings.json` 报告 `SETTINGS_INVALID_FORMAT`：
 
-1. Quit Codex Lite.
-2. Copy `settings.json` to a safe private location.
-3. Rename the damaged file to `settings.json.broken`.
-4. Start Codex Lite again.
-5. Re-apply settings in the Settings page.
+1. 退出 Nuomi Switch。
+2. 把 `settings.json` 复制到安全的私有位置。
+3. 将损坏文件重命名为 `settings.json.broken`。
+4. 重新启动 Nuomi Switch。
+5. 在设置页重新应用设置。
 
-Settings are non-credential configuration. Still review the file before sharing it because paths may reveal local usernames or project names.
+设置文件不是凭据配置，但分享前仍要检查，因为路径可能暴露本地用户名或项目名。
 
-## Recover ~/.codex/auth.json
+## 恢复 ~/.codex/auth.json
 
-If switching accounts produced an unusable Codex auth file:
+如果切换账号后 Codex 授权文件不可用：
 
-1. Quit Codex Lite and any Codex process that may read `~/.codex/auth.json`.
-2. Open the Codex Lite `backups/` directory.
-3. Find the most recent backup created before the failed switch.
-4. Copy the backup to `~/.codex/auth.json`.
-5. Restart Codex or Codex Lite and verify the active account.
+1. 退出 Nuomi Switch 和所有可能读取 `~/.codex/auth.json` 的 Codex 进程。
+2. 打开 Nuomi Switch 的 `backups/` 目录。
+3. 找到失败切换前创建的最新备份。
+4. 将备份复制回 `~/.codex/auth.json`。
+5. 重启 Codex 或 Nuomi Switch，并确认当前账号可用。
 
-If no backup exists, re-authenticate through Codex or import a known-good auth JSON that you control.
+如果没有备份，请通过 Codex 重新登录，或导入你自己掌控的可信授权 JSON。
 
-## Public Issue Guidance
+## 公开 issue 指引
 
-When reporting recovery problems, include:
+报告恢复问题时，请包含：
 
-- Operating system and version.
-- Codex Lite version.
-- The error code and message.
-- Whether the affected file was `accounts.json`, `settings.json`, or `~/.codex/auth.json`.
-- Redacted logs only.
+- 操作系统和版本。
+- Nuomi Switch 版本。
+- 错误码和错误消息。
+- 受影响文件是 `accounts.json`、`settings.json` 还是 `~/.codex/auth.json`。
+- 仅提供已脱敏日志。
 
-Never attach real `auth.json`, `accounts.json`, token values, API keys, OAuth callback URLs, or backup files.
+不要附加真实 `auth.json`、`accounts.json`、Token、API Key、OAuth 回调 URL 或备份文件。
