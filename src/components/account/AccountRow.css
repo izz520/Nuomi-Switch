@@ -33,25 +33,65 @@
 
 .account-card.current::after {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 19.5px;
+  right: 19.5px;
   width: 7px;
   height: 7px;
   border-radius: 999px;
   background: var(--color-success);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-success) 40%, transparent);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--color-success) 32%, transparent),
+    0 0 14px color-mix(in oklch, var(--color-success) 54%, transparent);
   content: "";
-  animation: pulse 2.8s ease-in-out infinite;
+  transform: translate(50%, -50%) scale(1);
+  animation: live-dot 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
 }
 
-@keyframes pulse {
+.account-card.current::before {
+  position: absolute;
+  top: 19.5px;
+  right: 19.5px;
+  width: 21px;
+  height: 21px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in oklch, var(--color-success) 54%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-success) 16%, transparent);
+  content: "";
+  opacity: 0;
+  transform: translate(50%, -50%) scale(0.46);
+  animation: live-ring 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+@keyframes live-dot {
   0%, 100% {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(50%, -50%) scale(1);
   }
   50% {
-    opacity: 0.8;
-    transform: scale(1.1);
+    opacity: 0.82;
+    transform: translate(50%, -50%) scale(0.86);
+  }
+}
+
+@keyframes live-ring {
+  0% {
+    opacity: 0;
+    transform: translate(50%, -50%) scale(0.46);
+  }
+  14% {
+    opacity: 0.7;
+  }
+  70%, 100% {
+    opacity: 0;
+    transform: translate(50%, -50%) scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-card.current::before,
+  .account-card.current::after {
+    animation: none;
   }
 }
 
