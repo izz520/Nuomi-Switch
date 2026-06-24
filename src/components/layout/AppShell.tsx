@@ -12,7 +12,7 @@ import { type PointerEvent, type ReactNode } from 'react';
 import { startWindowDragging } from '../../services/windowService';
 import { type ThemePreference, useThemeStore } from '../../stores/useThemeStore';
 
-type Page = 'accounts' | 'sessions' | 'settings' | 'logs';
+type Page = 'accounts' | 'sessions' | 'claude' | 'settings' | 'logs';
 
 interface AppShellProps {
   page: Page;
@@ -23,6 +23,7 @@ interface AppShellProps {
 const PAGE_META: Record<Page, { title: string; icon: LucideIcon }> = {
   accounts: { title: '账号管理', icon: Users },
   sessions: { title: '会话管理', icon: MessagesSquare },
+  claude: { title: 'Claude Code', icon: MessagesSquare },
   settings: { title: '设置', icon: Settings },
   logs: { title: '日志', icon: FileText },
 };
@@ -89,6 +90,15 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
             onClick={() => setPage('accounts')}
           >
             <img src="/chatgpt-icon.svg" alt="" className="nav-icon-img" />
+          </button>
+          <button
+            className={`nav-button ${page === 'claude' ? 'active' : ''}`}
+            aria-label="Claude Code"
+            aria-current={page === 'claude' ? 'page' : undefined}
+            title="Claude Code"
+            onClick={() => setPage('claude')}
+          >
+            <img src="/claude-icon.svg" alt="" className="nav-icon-img" />
           </button>
         </div>
 

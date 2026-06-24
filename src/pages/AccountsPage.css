@@ -75,7 +75,7 @@
   --account-card-max: 390px;
 
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(var(--account-card-min), 25vw, var(--account-card-max))), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(var(--account-card-min), 25vw, var(--account-card-max))), 1fr));
   gap: 18px;
   align-items: stretch;
 }

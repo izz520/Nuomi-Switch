@@ -10,7 +10,7 @@ import { Users, History, RotateCcw } from 'lucide-react';
 import { useCodexAccountsStore } from './stores/useCodexAccountsStore';
 import { useCodexSessionsStore } from './stores/useCodexSessionsStore';
 
-type Page = 'accounts' | 'sessions' | 'settings' | 'logs';
+type Page = 'accounts' | 'sessions' | 'claude' | 'settings' | 'logs';
 type AccountTab = 'accounts' | 'sessions' | 'reset';
 
 export function App() {
@@ -54,6 +54,12 @@ export function App() {
             ) : (
               <AccountResetSettingsPage />
             )}
+          </section>
+        </div>
+      ) : page === 'claude' ? (
+        <div className="content">
+          <section className="accounts-dashboard">
+            <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-6)' }}>Claude Code 页面即将上线 🚀</p>
           </section>
         </div>
       ) : page === 'settings' ? (
