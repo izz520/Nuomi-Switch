@@ -1,4 +1,5 @@
 pub mod account;
+pub mod claude;
 pub mod import;
 pub mod oauth;
 pub mod quota;

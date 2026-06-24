@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { AccountResetSettingsPage } from './pages/AccountResetSettingsPage';
 import { AccountsPage } from './pages/AccountsPage';
+import { ClaudeAccountsPage } from './pages/ClaudeAccountsPage';
 import { SessionsPage } from './pages/SessionsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LogsPage } from './pages/LogsPage';
@@ -57,11 +58,7 @@ export function App() {
           </section>
         </div>
       ) : page === 'claude' ? (
-        <div className="content">
-          <section className="accounts-dashboard">
-            <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-6)' }}>Claude Code 页面即将上线 🚀</p>
-          </section>
-        </div>
+        <ClaudeAccountsPage />
       ) : page === 'settings' ? (
         <SettingsPage />
       ) : (

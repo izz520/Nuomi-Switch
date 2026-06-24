@@ -2,6 +2,7 @@ use std::fs;
 
 use crate::infra::{atomic_write, paths};
 use crate::models::account::AccountsFile;
+use crate::models::claude::{ClaudeAccountsFile, ClaudeCurrentAccounts};
 use crate::models::error::{AppError, AppResult};
 use crate::models::settings::AppSettings;
 
@@ -43,6 +44,79 @@ pub fn save_accounts_file(mut file: AccountsFile) -> AppResult<()> {
         AppError::new(
             "STORAGE_SERIALIZE_FAILED",
             format!("序列化账号失败：{}", err),
+            "请重试。",
+        )
+    })?;
+    atomic_write::write_atomic(&path, &content)
+}
+
+pub fn load_claude_accounts_file() -> AppResult<ClaudeAccountsFile> {
+    let path = paths::claude_accounts_file_path()?;
+    if !path.exists() {
+        return Ok(ClaudeAccountsFile {
+            schema_version: "1.0.0".to_string(),
+            accounts: Vec::new(),
+            updated_at: now_timestamp(),
+        });
+    }
+
+    let content = fs::read_to_string(&path).map_err(|err| {
+        AppError::new(
+            "STORAGE_READ_FAILED",
+            format!("读取 {} 失败：{}", path.display(), err),
+            "请打开数据目录并检查文件权限。",
+        )
+    })?;
+    serde_json::from_str(&content).map_err(|err| {
+        AppError::new(
+            "STORAGE_INVALID_FORMAT",
+            format!("解析 {} 失败：{}", path.display(), err),
+            "请先备份该文件，然后重新导入 Claude 账号。",
+        )
+    })
+}
+
+pub fn save_claude_accounts_file(mut file: ClaudeAccountsFile) -> AppResult<()> {
+    file.updated_at = now_timestamp();
+    let path = paths::claude_accounts_file_path()?;
+    let content = serde_json::to_vec_pretty(&file).map_err(|err| {
+        AppError::new(
+            "STORAGE_SERIALIZE_FAILED",
+            format!("序列化 Claude 账号失败：{}", err),
+            "请重试。",
+        )
+    })?;
+    atomic_write::write_atomic(&path, &content)
+}
+
+pub fn load_claude_current_accounts() -> AppResult<ClaudeCurrentAccounts> {
+    let path = paths::claude_current_accounts_file_path()?;
+    if !path.exists() {
+        return Ok(ClaudeCurrentAccounts::default());
+    }
+
+    let content = fs::read_to_string(&path).map_err(|err| {
+        AppError::new(
+            "STORAGE_READ_FAILED",
+            format!("读取 {} 失败：{}", path.display(), err),
+            "请打开数据目录并检查文件权限。",
+        )
+    })?;
+    serde_json::from_str(&content).map_err(|err| {
+        AppError::new(
+            "STORAGE_INVALID_FORMAT",
+            format!("解析 {} 失败：{}", path.display(), err),
+            "请先备份该文件，然后重新设置 Claude 当前账号。",
+        )
+    })
+}
+
+pub fn save_claude_current_accounts(current: ClaudeCurrentAccounts) -> AppResult<()> {
+    let path = paths::claude_current_accounts_file_path()?;
+    let content = serde_json::to_vec_pretty(&current).map_err(|err| {
+        AppError::new(
+            "STORAGE_SERIALIZE_FAILED",
+            format!("序列化 Claude 当前账号失败：{}", err),
             "请重试。",
         )
     })?;

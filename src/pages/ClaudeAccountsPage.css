@@ -1,0 +1,223 @@
+.claude-dashboard {
+  gap: var(--space-4);
+}
+
+.claude-account-grid {
+  --account-card-min: 320px;
+  --account-card-max: 390px;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(var(--account-card-min), 25vw, var(--account-card-max))), 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.claude-card-main {
+  grid-template-rows: auto auto minmax(118px, 1fr) auto;
+}
+
+.claude-oauth-header,
+.claude-oauth-link-row {
+  display: flex;
+  align-items: center;
+}
+
+.claude-oauth-header,
+.claude-oauth-link-row {
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.claude-oauth-panel p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.claude-mode-tag {
+  font-size: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-active);
+}
+
+.claude-mode-tag.desktop_gateway {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.claude-mode-tag.api_key {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-active);
+}
+
+.claude-card-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.claude-card-meta div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in oklch, var(--glass-border) 72%, transparent);
+  border-radius: var(--radius-control);
+  background: color-mix(in oklch, var(--color-surface-raised) 62%, transparent);
+}
+
+.claude-card-meta dt {
+  color: var(--color-text-quiet);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.claude-card-meta dd {
+  margin: 4px 0 0;
+  color: var(--color-text-strong);
+  font-size: 13px;
+  line-height: 20px;
+  word-break: break-word;
+}
+
+.claude-card-path code,
+.claude-oauth-link-row code {
+  display: block;
+  max-width: 100%;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.claude-card-path {
+  display: block;
+  min-width: 0;
+  min-height: 58px;
+  margin-top: 2px;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+}
+
+.claude-card-path code,
+.claude-card-path span {
+  display: block;
+  max-height: 76px;
+  overflow: hidden;
+  padding: 11px 12px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.claude-card-path span {
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.claude-card-actions {
+  gap: 8px;
+}
+
+.claude-card-actions .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.claude-card-actions .icon-button[aria-label="删除账号"]:hover:not(:disabled) {
+  border-color: color-mix(in oklch, var(--color-error) 44%, transparent);
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.claude-oauth-panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.claude-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary-active);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.claude-oauth-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.claude-inline-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.claude-inline-field span {
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: var(--font-weight-bold);
+}
+
+.claude-inline-field input,
+.claude-inline-field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.claude-oauth-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 960px) {
+  .claude-card-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .claude-oauth-header,
+  .claude-oauth-link-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 1680px) {
+  .claude-account-grid {
+    --account-card-max: 420px;
+
+    grid-template-columns: repeat(auto-fill, minmax(var(--account-card-min), var(--account-card-max)));
+    justify-content: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .claude-account-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 520px) {
+  .claude-card-main {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .claude-card-meta {
+    gap: 8px;
+  }
+}
