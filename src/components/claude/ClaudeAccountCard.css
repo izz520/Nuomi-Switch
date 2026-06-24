@@ -1,0 +1,59 @@
+.claude-card-main {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 240px;
+}
+
+.claude-account-fields {
+  align-self: start;
+}
+
+.claude-account-fields .api-account-field {
+  min-height: 64px;
+}
+
+.claude-account-fields .api-account-field-label {
+  font-size: 12px;
+}
+
+.claude-account-fields .api-account-field code {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.claude-mode-tag {
+  font-size: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-active);
+}
+
+.claude-mode-tag.desktop_gateway {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.claude-mode-tag.api_key {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-active);
+}
+
+.claude-card-actions {
+  gap: 8px;
+}
+
+.claude-card-actions .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.claude-card-actions .icon-button[aria-label="删除账号"]:hover:not(:disabled) {
+  border-color: color-mix(in oklch, var(--color-error) 44%, transparent);
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+@media (max-width: 520px) {
+  .claude-card-main {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+}

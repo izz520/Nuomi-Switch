@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRightLeft,
   Bot,
   Cable,
   ExternalLink,
@@ -8,21 +7,19 @@ import {
   HardDriveDownload,
   KeyRound,
   MonitorSmartphone,
-  Pencil,
   Plus,
   RefreshCcw,
-  RefreshCw,
   ShieldUser,
-  Trash2,
 } from 'lucide-react';
 import { Tabs, type Tab } from '../components/ui/Tabs/Tabs';
 import { Button } from '../components/ui/Button';
-import { IconButton } from '../components/ui/IconButton';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { EmptyState } from '../components/ui/EmptyState/EmptyState';
 import { SearchInput } from '../components/ui/SearchInput/SearchInput';
 import { StatCard } from '../components/ui/StatCard/StatCard';
 import { Panel } from '../components/ui/Panel/Panel';
+import { ClaudeAccountCard } from '../components/claude/ClaudeAccountCard';
+import { ClaudeApiKeyModal } from '../components/claude/ClaudeApiKeyModal';
 import { ClaudeAccountModal } from '../components/claude/ClaudeAccountModal';
 import { useClaudeAccountsStore } from '../stores/useClaudeAccountsStore';
 import {
@@ -33,7 +30,6 @@ import {
   type ClaudeApiKeyInput,
   type ClaudeDesktopGatewayInput,
 } from '../types/claude';
-import '../components/account/AccountRow.css';
 import './ClaudeAccountsPage.css';
 
 type WorkspaceTab = 'desktop' | 'cli';
@@ -42,27 +38,6 @@ type ModalState =
   | { type: 'create-desktop' }
   | { type: 'create-api' }
   | { type: 'edit'; account: ClaudeAccountView };
-
-function formatMode(account: ClaudeAccountView): string {
-  switch (account.authMode) {
-    case 'desktop_oauth':
-      return 'Desktop OAuth';
-    case 'desktop_gateway':
-      return 'Desktop Gateway';
-    case 'cli_oauth':
-      return 'CLI OAuth';
-    case 'api_key':
-      return 'API Key';
-  }
-}
-
-function currentSlotLabel(account: ClaudeAccountView): string {
-  return isClaudeDesktopMode(account.authMode) ? '当前 Desktop' : '当前 CLI';
-}
-
-function subtitle(account: ClaudeAccountView): string {
-  return account.email ?? account.organizationName ?? account.accountId ?? account.id;
-}
 
 export function ClaudeAccountsPage() {
   const {
@@ -227,67 +202,18 @@ export function ClaudeAccountsPage() {
               description={workspaceTab === 'desktop' ? '导入本机 Desktop 登录态，或添加 Gateway 配置。' : '导入本机 CLI 登录态、完成 OAuth，或录入 API Key。'}
             />
           ) : null}
-          {visibleAccounts.map((account) => {
-            const slotEnabled = isClaudeDesktopMode(account.authMode)
-              ? currentAccounts.claudeDesktopAccount === account.id
-              : currentAccounts.claudeCodeAccount === account.id;
-            const canEdit = account.authMode === 'desktop_gateway' || account.authMode === 'api_key';
-            return (
-              <article key={account.id} className={`account-card account-row claude-card ${account.isCurrent ? 'current' : ''}`}>
-                <div className="account-card-main claude-card-main">
-                  <span className="account-card-header">
-                    <strong>{account.displayName}</strong>
-                    <span className={`account-plan-badge claude-mode-tag ${account.authMode}`}>{formatMode(account)}</span>
-                  </span>
-                  <code className="account-card-id">{subtitle(account)}</code>
-
-                  <dl className="claude-card-meta">
-                    <div>
-                      <dt>计划</dt>
-                      <dd>{account.planType ?? '未识别'}</dd>
-                    </div>
-                    <div>
-                      <dt>组织</dt>
-                      <dd>{account.organizationName ?? '未记录'}</dd>
-                    </div>
-                    <div>
-                      <dt>当前槽位</dt>
-                      <dd>{slotEnabled ? `${isClaudeDesktopMode(account.authMode) ? 'Desktop' : 'CLI'} 已启用` : `${isClaudeDesktopMode(account.authMode) ? 'Desktop' : 'CLI'} 未启用`}</dd>
-                    </div>
-                    {account.isCurrent ? (
-                      <div>
-                        <dt>状态</dt>
-                        <dd>{currentSlotLabel(account)}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-
-                  <div className="claude-card-path">
-                    {account.desktopProfileDir ? <code>{account.desktopProfileDir}</code> : account.apiBaseUrl ? <code>{account.apiBaseUrl}</code> : <span>未记录路径</span>}
-                  </div>
-                </div>
-
-                <div className="account-card-actions claude-card-actions">
-                  <IconButton
-                    label={account.isCurrent ? '当前账号' : '切换账号'}
-                    icon={switchingAccountId === account.id ? <RefreshCw className="spin-icon" size={16} /> : <ArrowRightLeft size={16} />}
-                    active={account.isCurrent}
-                    disabled={account.isCurrent || switchingAccountId === account.id}
-                    onClick={() => void switchAccount(account.id)}
-                  />
-                  {canEdit ? (
-                    <IconButton label="编辑账号" icon={<Pencil size={16} />} onClick={() => setModal({ type: 'edit', account })} />
-                  ) : null}
-                  <IconButton
-                    label="删除账号"
-                    icon={deletingAccountId === account.id ? <RefreshCw className="spin-icon" size={16} /> : <Trash2 size={16} />}
-                    disabled={deletingAccountId === account.id}
-                    onClick={() => void removeAccount(account.id)}
-                  />
-                </div>
-              </article>
-            );
-          })}
+          {visibleAccounts.map((account) => (
+            <ClaudeAccountCard
+              key={account.id}
+              account={account}
+              currentAccounts={currentAccounts}
+              switching={switchingAccountId === account.id}
+              deleting={deletingAccountId === account.id}
+              onSwitch={(accountId) => void switchAccount(accountId)}
+              onEdit={(nextAccount) => setModal({ type: 'edit', account: nextAccount })}
+              onDelete={(accountId) => void removeAccount(accountId)}
+            />
+          ))}
         </div>
       </section>
 
@@ -304,6 +230,14 @@ export function ClaudeAccountsPage() {
         onSaveDesktopGateway={(accountId: string, input: ClaudeDesktopGatewayInput) =>
           saveDesktopGateway(accountId, input).then(() => undefined)
         }
+      />
+      <ClaudeApiKeyModal
+        open={modal.type === 'create-api' || Boolean(editingApi)}
+        account={editingApi}
+        saving={saving}
+        onClose={() => setModal({ type: 'closed' })}
+        onCreate={(input: ClaudeApiKeyInput) => addApiKey(input).then(() => undefined)}
+        onSave={(accountId: string, input: ClaudeApiKeyInput) => saveApiKey(accountId, input).then(() => undefined)}
       />
     </div>
   );

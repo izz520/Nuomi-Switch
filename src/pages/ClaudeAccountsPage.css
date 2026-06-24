@@ -12,75 +12,6 @@
   align-items: stretch;
 }
 
-.claude-card-main {
-  grid-template-rows: auto auto minmax(118px, 1fr) auto;
-}
-
-.claude-oauth-header,
-.claude-oauth-link-row {
-  display: flex;
-  align-items: center;
-}
-
-.claude-oauth-header,
-.claude-oauth-link-row {
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.claude-oauth-panel p {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 20px;
-}
-
-.claude-mode-tag {
-  font-size: 12px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary-active);
-}
-
-.claude-mode-tag.desktop_gateway {
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
-}
-
-.claude-mode-tag.api_key {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-active);
-}
-
-.claude-card-meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
-  margin: 0;
-}
-
-.claude-card-meta div {
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in oklch, var(--glass-border) 72%, transparent);
-  border-radius: var(--radius-control);
-  background: color-mix(in oklch, var(--color-surface-raised) 62%, transparent);
-}
-
-.claude-card-meta dt {
-  color: var(--color-text-quiet);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.claude-card-meta dd {
-  margin: 4px 0 0;
-  color: var(--color-text-strong);
-  font-size: 13px;
-  line-height: 20px;
-  word-break: break-word;
-}
-
-.claude-card-path code,
 .claude-oauth-link-row code {
   display: block;
   max-width: 100%;
@@ -92,48 +23,19 @@
   font-size: 12px;
 }
 
-.claude-card-path {
-  display: block;
-  min-width: 0;
-  min-height: 58px;
-  margin-top: 2px;
-  overflow: hidden;
-  border-radius: var(--radius-control);
-  background: var(--color-control);
+.claude-oauth-header,
+.claude-oauth-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-.claude-card-path code,
-.claude-card-path span {
-  display: block;
-  max-height: 76px;
-  overflow: hidden;
-  padding: 11px 12px;
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 18px;
-  overflow-wrap: anywhere;
-}
-
-.claude-card-path span {
+.claude-oauth-panel p {
+  margin: 4px 0 0;
   color: var(--color-text-muted);
-  font-family: inherit;
-  font-weight: var(--font-weight-semibold);
-}
-
-.claude-card-actions {
-  gap: 8px;
-}
-
-.claude-card-actions .icon-button {
-  width: 32px;
-  height: 32px;
-}
-
-.claude-card-actions .icon-button[aria-label="删除账号"]:hover:not(:disabled) {
-  border-color: color-mix(in oklch, var(--color-error) 44%, transparent);
-  background: var(--color-error-soft);
-  color: var(--color-error);
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .claude-oauth-panel {
@@ -185,10 +87,6 @@
 }
 
 @media (max-width: 960px) {
-  .claude-card-meta {
-    grid-template-columns: 1fr;
-  }
-
   .claude-oauth-header,
   .claude-oauth-link-row {
     align-items: stretch;
@@ -209,15 +107,5 @@
   .claude-account-grid {
     grid-template-columns: 1fr;
     gap: var(--space-4);
-  }
-}
-
-@media (max-width: 520px) {
-  .claude-card-main {
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-  }
-
-  .claude-card-meta {
-    gap: 8px;
   }
 }
