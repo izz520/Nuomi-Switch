@@ -4,35 +4,51 @@
 }
 
 .claude-desktop-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
-  background: var(--color-control);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-medium);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: var(--blur-glass-strong);
+  -webkit-backdrop-filter: var(--blur-glass-strong);
 }
 
 .claude-desktop-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 52px;
-  border-radius: 14px;
+  gap: var(--space-2);
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--color-text-muted);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: var(--font-weight-bold);
+  cursor: pointer;
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
+.claude-desktop-tab:hover:not(.active) {
+  background: var(--glass-light);
+  color: var(--color-text-strong);
+}
+
 .claude-desktop-tab.active {
-  background: var(--gradient-brand);
-  color: var(--color-on-primary);
-  box-shadow: var(--shadow-sm);
+  background: var(--glass-light);
+  color: var(--color-text-strong);
+  box-shadow: var(--shadow-sm), var(--shadow-glass-inset);
+  backdrop-filter: var(--blur-glass-strong);
+  -webkit-backdrop-filter: var(--blur-glass-strong);
 }
 
 .claude-desktop-pane {
