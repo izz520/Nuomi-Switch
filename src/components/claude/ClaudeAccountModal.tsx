@@ -1,6 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog';
-import { Database, Eye, EyeOff, FileUp, FolderOpen, KeyRound, Monitor, Plus, Trash2, Upload } from 'lucide-react';
+import {
+  CheckCircle2,
+  CircleAlert,
+  Database,
+  Eye,
+  EyeOff,
+  FileUp,
+  FolderOpen,
+  KeyRound,
+  LoaderCircle,
+  Monitor,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import { Modal } from '../ui/Modal/Modal';
 import { Button } from '../ui/Button';
 import type {
@@ -42,11 +56,12 @@ const desktopTabs: { id: DesktopSourceTab; label: string; icon: typeof Monitor }
   { id: 'gateway', label: '网关', icon: KeyRound },
   { id: 'json', label: 'JSON', icon: Database },
 ];
+const temporarilyDisabledCreateTabs = new Set<DesktopSourceTab>(['desktop', 'json']);
 
 const defaultGatewayForm: GatewayFormState = {
-  displayName: 'APIKEY.FUN',
+  displayName: '',
   apiKey: '',
-  apiBaseUrl: 'https://api.apikey.fun',
+  apiBaseUrl: '',
   authScheme: 'bearer',
   connectionMode: 'direct',
   modelsText: 'claude-sonnet-4-6\nclaude-haiku-4-5\nclaude-opus-4-8',
@@ -110,7 +125,7 @@ export function ClaudeAccountModal({
   onImportDesktopJsonFile,
   onSaveDesktopGateway,
 }: ClaudeAccountModalProps) {
-  const [activeTab, setActiveTab] = useState<DesktopSourceTab>('desktop');
+  const [activeTab, setActiveTab] = useState<DesktopSourceTab>('gateway');
   const [desktopName, setDesktopName] = useState('');
   const [gatewayForm, setGatewayForm] = useState<GatewayFormState>(defaultGatewayForm);
   const [jsonText, setJsonText] = useState('');
@@ -123,6 +138,8 @@ export function ClaudeAccountModal({
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsMessage, setModelsMessage] = useState<string | null>(null);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const modelFetchSequence = useRef(0);
+  const lastModelFetchKey = useRef('');
 
   useEffect(() => {
     if (!open) {
@@ -131,9 +148,9 @@ export function ClaudeAccountModal({
     if (isGatewayAccount(account)) {
       setActiveTab('gateway');
       setGatewayForm({
-        displayName: account?.displayName ?? 'APIKEY.FUN',
+        displayName: account?.displayName ?? '',
         apiKey: account?.apiKey ?? '',
-        apiBaseUrl: account?.apiBaseUrl ?? 'https://api.apikey.fun',
+        apiBaseUrl: account?.apiBaseUrl ?? '',
         authScheme: 'bearer',
         connectionMode: account?.desktopGatewayConnectionMode ?? 'direct',
         modelsText: (account?.desktopGatewayModels?.length ? account.desktopGatewayModels : defaultDesktopModels).join('\n'),
@@ -145,7 +162,7 @@ export function ClaudeAccountModal({
       );
       setUpstreamModels(account?.desktopGatewayUpstreamModels ?? []);
     } else {
-      setActiveTab('desktop');
+      setActiveTab('gateway');
       setGatewayForm(defaultGatewayForm);
       setGatewayMappings(buildMappings(defaultDesktopModels, []));
       setUpstreamModels([]);
@@ -156,7 +173,39 @@ export function ClaudeAccountModal({
     setShowApiKey(false);
     setModelsMessage(null);
     setModelsError(null);
+    lastModelFetchKey.current = '';
   }, [account, open]);
+
+  useEffect(() => {
+    const apiKey = gatewayForm.apiKey.trim();
+    const apiBaseUrl = gatewayForm.apiBaseUrl.trim();
+
+    if (!open || activeTab !== 'gateway') {
+      return;
+    }
+
+    if (!apiKey || !apiBaseUrl) {
+      modelFetchSequence.current += 1;
+      setModelsLoading(false);
+      setModelsMessage(null);
+      setModelsError(null);
+      lastModelFetchKey.current = '';
+      return;
+    }
+
+    const fetchKey = `${apiBaseUrl}\n${apiKey}\n${gatewayForm.authScheme}`;
+    if (lastModelFetchKey.current === fetchKey) {
+      return;
+    }
+
+    modelFetchSequence.current += 1;
+    const timeoutId = window.setTimeout(() => {
+      lastModelFetchKey.current = fetchKey;
+      void fetchGatewayModels(apiBaseUrl, apiKey, gatewayForm.authScheme);
+    }, 650);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeTab, gatewayForm.apiBaseUrl, gatewayForm.apiKey, gatewayForm.authScheme, open]);
 
   const title = mode === 'edit' ? '编辑 Claude 账号' : '添加 Claude 账号';
   const isEditingGateway = mode === 'edit' && isGatewayAccount(account);
@@ -266,22 +315,25 @@ export function ClaudeAccountModal({
     upstreamModels,
   ]);
 
-  async function fetchGatewayModels() {
-    const apiKey = gatewayForm.apiKey.trim();
-    const apiBaseUrl = gatewayForm.apiBaseUrl.trim();
-    if (!apiKey || !apiBaseUrl) {
-      setModelsError('请先填写基础 URL 和 API 密钥。');
-      return;
-    }
+  async function fetchGatewayModels(
+    apiBaseUrl: string,
+    apiKey: string,
+    authScheme: GatewayFormState['authScheme'],
+  ) {
+    const sequence = modelFetchSequence.current + 1;
+    modelFetchSequence.current = sequence;
     setModelsLoading(true);
     setModelsError(null);
-    setModelsMessage(null);
+    setModelsMessage('正在自动获取模型...');
     try {
       const result = await listClaudeDesktopGatewayModels({
         apiKey,
         apiBaseUrl,
-        authScheme: gatewayForm.authScheme,
+        authScheme,
       });
+      if (modelFetchSequence.current !== sequence) {
+        return;
+      }
       const models = result.models.map((model) => model.id.trim()).filter(Boolean);
       const resolvedAuthScheme = result.authScheme;
       setUpstreamModels(models);
@@ -313,12 +365,18 @@ export function ClaudeAccountModal({
         }));
         setGatewayMappings(buildMappings(defaultDesktopModels, models));
       }
-      setModelsMessage(`已获取 ${models.length} 个模型，可按需修改。`);
+      setModelsMessage(`已获取 ${models.length} 个模型`);
     } catch (error) {
+      if (modelFetchSequence.current !== sequence) {
+        return;
+      }
       setModelsError(error instanceof Error ? error.message : '查询模型失败，请检查配置。');
+      setModelsMessage(null);
       setGatewayForm((state) => ({ ...state, connectionMode: 'local_mapping' }));
     } finally {
-      setModelsLoading(false);
+      if (modelFetchSequence.current === sequence) {
+        setModelsLoading(false);
+      }
     }
   }
 
@@ -335,19 +393,24 @@ export function ClaudeAccountModal({
       <div className="claude-desktop-modal">
         {mode === 'create' ? (
           <div className="claude-desktop-tabs" role="tablist" aria-label="Claude Desktop 添加方式">
-            {desktopTabs.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === id}
-                className={`claude-desktop-tab ${activeTab === id ? 'active' : ''}`}
-                onClick={() => setActiveTab(id)}
-              >
-                <Icon size={16} />
-                <span>{label}</span>
-              </button>
-            ))}
+            {desktopTabs.map(({ id, label, icon: Icon }) => {
+              const disabled = temporarilyDisabledCreateTabs.has(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  aria-disabled={disabled}
+                  disabled={disabled}
+                  className={`claude-desktop-tab ${activeTab === id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(id)}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </div>
         ) : null}
 
@@ -383,10 +446,22 @@ export function ClaudeAccountModal({
         {activeTab === 'gateway' ? (
           <div className="claude-desktop-pane">
             <label className="claude-field">
+              <span>账号名称</span>
+              <input
+                required
+                value={gatewayForm.displayName}
+                onChange={(event) => setGatewayForm((state) => ({ ...state, displayName: event.target.value }))}
+                placeholder="必填，例如主用网关"
+              />
+            </label>
+
+            <label className="claude-field">
               <span>基础 URL</span>
               <input
+                required
                 value={gatewayForm.apiBaseUrl}
                 onChange={(event) => setGatewayForm((state) => ({ ...state, apiBaseUrl: event.target.value }))}
+                placeholder="必填，例如 https://api.example.com"
               />
             </label>
 
@@ -407,21 +482,14 @@ export function ClaudeAccountModal({
             </div>
 
             <label className="claude-field">
-              <span>账号名称</span>
-              <input
-                value={gatewayForm.displayName}
-                onChange={(event) => setGatewayForm((state) => ({ ...state, displayName: event.target.value }))}
-              />
-            </label>
-
-            <label className="claude-field">
               <span>API 密钥</span>
               <div className="claude-password-row">
                 <input
+                  required
                   type={showApiKey ? 'text' : 'password'}
                   value={gatewayForm.apiKey}
                   onChange={(event) => setGatewayForm((state) => ({ ...state, apiKey: event.target.value }))}
-                  placeholder="粘贴供应商 API Key"
+                  placeholder="必填，粘贴供应商 API Key"
                 />
                 <button
                   type="button"
@@ -434,19 +502,32 @@ export function ClaudeAccountModal({
               </div>
             </label>
 
-            <div className="claude-gateway-model-actions">
-              <Button
-                variant="secondary"
-                icon={<KeyRound size={16} />}
-                loading={modelsLoading}
-                disabled={!gatewayForm.apiBaseUrl.trim() || !gatewayForm.apiKey.trim()}
-                onClick={() => void fetchGatewayModels()}
-              >
-                获取模型
-              </Button>
-              {modelsMessage ? <span className="claude-model-status success">{modelsMessage}</span> : null}
-              {modelsError ? <span className="claude-model-status error">{modelsError}</span> : null}
-            </div>
+            {modelsLoading || modelsError || modelsMessage ? (
+              <div className="claude-gateway-model-actions">
+                <div
+                  className={`claude-model-auto-status ${modelsLoading ? 'loading' : ''} ${modelsError ? 'error' : ''} ${modelsMessage && !modelsLoading ? 'success' : ''}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="claude-model-auto-icon" aria-hidden="true">
+                    {modelsLoading ? (
+                      <LoaderCircle size={16} />
+                    ) : modelsError ? (
+                      <CircleAlert size={16} />
+                    ) : (
+                      <CheckCircle2 size={16} />
+                    )}
+                  </span>
+                  <span>
+                    {modelsLoading
+                      ? '正在自动获取模型...'
+                      : modelsError
+                        ? modelsError
+                        : modelsMessage}
+                  </span>
+                </div>
+              </div>
+            ) : null}
 
             <div className="claude-field">
               <span>连接方式</span>

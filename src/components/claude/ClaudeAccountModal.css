@@ -1,6 +1,6 @@
 .claude-desktop-modal {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .claude-desktop-tabs {
@@ -43,6 +43,16 @@
   color: var(--color-text-strong);
 }
 
+.claude-desktop-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.claude-desktop-tab:disabled:hover {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
 .claude-desktop-tab.active {
   background: var(--glass-light);
   color: var(--color-text-strong);
@@ -53,7 +63,7 @@
 
 .claude-desktop-pane {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .claude-pane-card {
@@ -91,23 +101,24 @@
 }
 
 .claude-info-box {
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: color-mix(in oklch, var(--color-primary-soft) 28%, var(--color-surface));
   color: var(--color-text-muted);
-  line-height: 22px;
+  font-size: 13px;
+  line-height: 19px;
 }
 
 .claude-field {
   display: grid;
-  gap: var(--space-2);
+  gap: 7px;
 }
 
 .claude-field span {
-  color: var(--color-text-strong);
-  font-size: 14px;
-  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 780;
 }
 
 .claude-field input,
@@ -116,26 +127,52 @@
 .claude-mapping-row input,
 .claude-mapping-row select {
   width: 100%;
-  padding: 15px 16px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
   border: 1px solid var(--color-border);
-  border-radius: 18px;
-  background: var(--color-surface-raised);
-  color: var(--color-text);
+  border-radius: var(--radius-control);
+  outline: 0;
+  background: var(--color-surface);
+  color: var(--color-text-strong);
   font: inherit;
+  font-size: 13px;
+  font-weight: 680;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.claude-field input::placeholder,
+.claude-field textarea::placeholder,
+.claude-mapping-row input::placeholder {
+  color: var(--color-text-quiet);
+}
+
+.claude-field input:focus,
+.claude-field select:focus,
+.claude-field textarea:focus,
+.claude-mapping-row input:focus,
+.claude-mapping-row select:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 .claude-field textarea {
-  min-height: 220px;
+  height: auto;
+  min-height: 132px;
+  padding: 10px 12px;
   resize: vertical;
+  line-height: 20px;
 }
 
 .claude-segmented {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  padding: 6px;
+  gap: 4px;
+  padding: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border-radius: var(--radius-control);
   background: var(--color-control);
 }
 
@@ -144,10 +181,10 @@
 }
 
 .claude-segmented-option {
-  min-height: 50px;
-  border-radius: 14px;
+  min-height: 32px;
+  border-radius: 9px;
   color: var(--color-text-muted);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: var(--font-weight-bold);
 }
 
@@ -159,19 +196,19 @@
 
 .claude-password-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: var(--space-2);
   align-items: center;
 }
 
 .claude-visibility-toggle {
   display: inline-grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--color-border);
-  border-radius: 18px;
-  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   color: var(--color-text-muted);
 }
 
@@ -205,7 +242,86 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.claude-model-auto-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: var(--font-weight-bold);
+  line-height: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.claude-model-auto-status.success {
+  min-height: 28px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  box-shadow: none;
+}
+
+.claude-model-auto-status.loading {
+  border-color: color-mix(in oklch, var(--color-primary) 34%, var(--color-border));
+  background: color-mix(in oklch, var(--color-primary-soft) 34%, var(--color-surface));
+  color: var(--color-primary-active);
+}
+
+.claude-model-auto-status.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.42) 42%,
+    transparent 72%
+  );
+  transform: translateX(-120%);
+  animation: modelFetchSweep 1400ms cubic-bezier(0.2, 0, 0, 1) infinite;
+  pointer-events: none;
+}
+
+.claude-model-auto-status.error {
+  border-color: color-mix(in oklch, var(--color-error) 28%, var(--color-border));
+  background: color-mix(in oklch, var(--color-error-soft) 44%, var(--color-surface));
+  color: var(--color-error);
+}
+
+.claude-model-auto-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  position: relative;
+  z-index: 1;
+}
+
+.claude-model-auto-status.success .claude-model-auto-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-success);
+}
+
+.claude-model-auto-status > span:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+.claude-model-auto-status.loading .claude-model-auto-icon {
+  animation: modelFetchSpin 800ms linear infinite;
 }
 
 .claude-model-status {
@@ -266,12 +382,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 54px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   color: var(--color-text-muted);
+  font-size: 13px;
   font-weight: var(--font-weight-bold);
   white-space: nowrap;
 }
@@ -285,17 +402,29 @@
 .claude-mapping-delete {
   display: inline-grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: var(--color-surface-raised);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   color: var(--color-text-muted);
 }
 
 .claude-mapping-delete:hover {
   color: var(--color-error);
   background: var(--color-error-soft);
+}
+
+@keyframes modelFetchSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes modelFetchSweep {
+  to {
+    transform: translateX(120%);
+  }
 }
 
 @media (max-width: 760px) {
@@ -324,5 +453,16 @@
 
   .claude-mapping-delete {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claude-model-auto-status.loading .claude-model-auto-icon {
+    animation: none;
+  }
+
+  .claude-model-auto-status.loading::after {
+    animation: none;
+    opacity: 0;
   }
 }
