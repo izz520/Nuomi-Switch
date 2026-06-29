@@ -35,7 +35,7 @@ function formatMode(account: ClaudeAccountView): string {
     case 'cli_oauth':
       return 'CLI OAuth';
     case 'api_key':
-      return 'API Key';
+      return 'API';
   }
 }
 

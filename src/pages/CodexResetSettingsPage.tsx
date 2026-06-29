@@ -4,12 +4,12 @@ import { ConfirmResetSettingsModal } from '../components/account/ConfirmResetSet
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { useCodexAccountsStore } from '../stores/useCodexAccountsStore';
-import './AccountsPage.css';
+import './CodexAccountsPage.css';
 
 const resetDescription =
   '重置codex的默认设置，仅适用于使用过中转站，然后在codex中退出选择账号登录后，无法使用的情况下重置设置';
 
-export function AccountResetSettingsPage() {
+export function CodexResetSettingsPage() {
   const error = useCodexAccountsStore((state) => state.error);
   const resettingProviderConfig = useCodexAccountsStore((state) => state.resettingProviderConfig);
   const resetSettingsNotice = useCodexAccountsStore((state) => state.resetSettingsNotice);

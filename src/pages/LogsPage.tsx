@@ -73,8 +73,8 @@ export function LogsPage() {
         {filteredEntries.length === 0 ? (
           entries.length === 0 ? (
             <EmptyState
-              title="还没有加载日志"
-              description="点击刷新按钮加载最新的日志条目。"
+              title="暂无日志"
+              description="应用启动或执行操作后会在这里显示最新日志。"
             />
           ) : (
             <EmptyState

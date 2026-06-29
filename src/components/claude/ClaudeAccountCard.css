@@ -27,11 +27,7 @@
   color: var(--color-primary-active);
 }
 
-.claude-mode-tag.desktop_gateway {
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
-}
-
+.claude-mode-tag.desktop_gateway,
 .claude-mode-tag.api_key {
   background: var(--color-primary-soft);
   color: var(--color-primary-active);

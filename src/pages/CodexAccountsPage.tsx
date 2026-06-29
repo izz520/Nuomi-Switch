@@ -15,7 +15,7 @@ import { useCodexAccountsStore } from '../stores/useCodexAccountsStore';
 import { useCodexSessionsStore } from '../stores/useCodexSessionsStore';
 import { useImportFlowStore } from '../stores/useImportFlowStore';
 import { isOAuthAuthMode, type CodexAccountView } from '../types/codex';
-import './AccountsPage.css';
+import './CodexAccountsPage.css';
 
 function matchesQuery(account: CodexAccountView, query: string): boolean {
   const haystack = [account.displayName, account.email, account.accountId, account.id]
@@ -25,11 +25,11 @@ function matchesQuery(account: CodexAccountView, query: string): boolean {
   return haystack.includes(query);
 }
 
-interface AccountsPageProps {
+interface CodexAccountsPageProps {
   onOpenSessions: () => void;
 }
 
-export function AccountsPage({ onOpenSessions }: AccountsPageProps) {
+export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
   const {
     accounts,
     loading,

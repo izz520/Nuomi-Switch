@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { AppShell } from './components/layout/AppShell';
-import { AccountResetSettingsPage } from './pages/AccountResetSettingsPage';
-import { AccountsPage } from './pages/AccountsPage';
+import { CodexResetSettingsPage } from './pages/CodexResetSettingsPage';
+import { CodexAccountsPage } from './pages/CodexAccountsPage';
 import { ClaudeAccountsPage } from './pages/ClaudeAccountsPage';
-import { SessionsPage } from './pages/SessionsPage';
+import { CodexSessionsPage } from './pages/CodexSessionsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LogsPage } from './pages/LogsPage';
 import { Tabs, type Tab } from './components/ui/Tabs/Tabs';
@@ -49,11 +49,11 @@ export function App() {
               <Tabs tabs={accountTabs} activeTab={accountTab} onChange={(id) => setAccountTab(id as AccountTab)} />
             </div>
             {accountTab === 'accounts' ? (
-              <AccountsPage onOpenSessions={() => setAccountTab('sessions')} />
+              <CodexAccountsPage onOpenSessions={() => setAccountTab('sessions')} />
             ) : accountTab === 'sessions' ? (
-              <SessionsPage onBack={() => setAccountTab('accounts')} />
+              <CodexSessionsPage onBack={() => setAccountTab('accounts')} />
             ) : (
-              <AccountResetSettingsPage />
+              <CodexResetSettingsPage />
             )}
           </section>
         </div>

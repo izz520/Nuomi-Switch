@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { useCodexSessionsStore } from '../stores/useCodexSessionsStore';
 import type { CodexSessionView } from '../types/session';
-import './SessionsPage.css';
+import './CodexSessionsPage.css';
 
 function formatTime(value?: number | null): string {
   if (!value) {
@@ -41,11 +41,11 @@ interface SessionGroup {
   sessions: CodexSessionView[];
 }
 
-interface SessionsPageProps {
+interface CodexSessionsPageProps {
   onBack: () => void;
 }
 
-export function SessionsPage({ onBack }: SessionsPageProps) {
+export function CodexSessionsPage({ onBack }: CodexSessionsPageProps) {
   const { sessions, loading, restoring, deleting, error, loadSessions, restoreSessions, deleteSessions } =
     useCodexSessionsStore();
   const [searchQuery, setSearchQuery] = useState('');
