@@ -23,13 +23,13 @@ export function App() {
   const accountTabs: Tab[] = [
     {
       id: 'accounts',
-      label: '账号管理',
+      label: 'Codex 账号',
       icon: <Users size={16} />,
       count: accounts.length,
     },
     {
       id: 'sessions',
-      label: '会话管理',
+      label: 'Codex 会话',
       icon: <History size={16} />,
       count: sessions.length,
     },

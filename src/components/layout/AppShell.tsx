@@ -20,8 +20,8 @@ interface AppShellProps {
 }
 
 const PAGE_META: Record<Page, { title: string; icon?: LucideIcon; iconSrc?: string }> = {
-  accounts: { title: '账号管理', iconSrc: '/chatgpt-icon.svg' },
-  sessions: { title: '会话管理', icon: MessagesSquare },
+  accounts: { title: 'Codex', iconSrc: '/chatgpt-icon.svg' },
+  sessions: { title: 'Codex', iconSrc: '/chatgpt-icon.svg' },
   claude: { title: 'Claude Code', iconSrc: '/claude-icon.svg' },
   settings: { title: '设置', icon: Settings },
   logs: { title: '日志', icon: FileText },
@@ -84,9 +84,9 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
         <div className="nav-section">
           <button
             className={`nav-button ${isAccountsArea ? 'active' : ''}`}
-            aria-label="账号管理"
+            aria-label="Codex"
             aria-current={isAccountsArea ? 'page' : undefined}
-            title="账号管理"
+            title="Codex"
             onClick={() => setPage('accounts')}
           >
             <img src="/chatgpt-icon.svg" alt="" className="nav-icon-img" />
