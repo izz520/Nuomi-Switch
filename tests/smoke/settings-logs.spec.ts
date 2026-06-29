@@ -6,6 +6,9 @@ async function installSystemMock(page: Page): Promise<void> {
       configurable: true,
       value: {
         invoke: async (command: string) => {
+          if (command === 'plugin:app|version') {
+            return '0.1.0';
+          }
           if (command === 'list_codex_accounts') {
             return [];
           }
@@ -74,6 +77,9 @@ test.describe('Settings and logs smoke', () => {
     await expect(page.getByRole('heading', { name: '设置', level: 1 })).toBeVisible();
     await expect(page.getByText('/Users/smoke/.codex/auth.json')).toBeVisible();
     await expect(page.getByText('已找到')).toBeVisible();
+    await expect(page.getByText('v0.1.0')).toBeVisible();
+    await page.getByRole('button', { name: '检查更新' }).click();
+    await expect(page.getByText('尚未配置更新清单地址。')).toBeVisible();
     await page.getByRole('button', { name: '检测 Codex 路径' }).click();
     await expectNoHorizontalOverflow(page);
   });
