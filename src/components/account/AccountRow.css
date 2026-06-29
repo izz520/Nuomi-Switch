@@ -388,13 +388,22 @@
   background: var(--color-success);
 }
 
-.reset-credit-meta {
+.reset-credit-panel {
   display: grid;
-  gap: 5px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 7px;
   min-width: 0;
-  margin-top: 1px;
-  padding-top: 2px;
-  color: var(--color-text-subtle);
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--color-primary-soft) 46%, transparent);
+  color: var(--color-text-muted);
+}
+
+.reset-credit-panel.empty {
+  border-color: var(--glass-border);
+  background: color-mix(in oklch, var(--glass-medium) 70%, transparent);
 }
 
 .reset-credit-summary {
@@ -403,8 +412,8 @@
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
-  font-size: 10px;
-  font-weight: var(--font-weight-semibold);
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
 }
 
 .reset-credit-summary > span {
@@ -416,39 +425,114 @@
 
 .reset-credit-summary .lucide {
   flex: 0 0 auto;
-  color: currentColor;
-  opacity: 0.74;
+  color: var(--color-primary-active);
 }
 
 .reset-credit-summary strong {
+  display: inline-flex;
   flex: 0 0 auto;
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-bold);
+  align-items: baseline;
+  gap: 3px;
+  color: var(--color-text);
+  font-weight: var(--font-weight-extrabold);
   font-variant-numeric: tabular-nums;
 }
 
-.reset-credit-expiries {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+.reset-credit-summary strong span {
+  color: var(--color-primary-active);
+  font-size: 15px;
+  line-height: 17px;
+}
+
+.reset-credit-expiry-list {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  max-height: 74px;
+  margin-right: -4px;
+  padding-right: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--color-primary) 42%, transparent) transparent;
+}
+
+.reset-credit-expiry-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.reset-credit-expiry-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-primary) 42%, transparent);
+}
+
+.reset-credit-expiry-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.reset-credit-expiry-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
   min-width: 0;
 }
 
-.reset-credit-expiries > span {
-  max-width: 100%;
-  min-height: 16px;
-  padding: 1px 0;
-  overflow: hidden;
-  color: var(--color-text-subtle);
+.reset-credit-expiry-index {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in oklch, var(--color-primary) 26%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-surface-raised) 64%, transparent);
+  color: var(--color-primary-active);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: var(--font-weight-extrabold);
+  font-variant-numeric: tabular-nums;
+}
+
+.reset-credit-expiry-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.reset-credit-expiry-body > span {
+  color: var(--color-text-quiet);
   font-size: 10px;
   line-height: 14px;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
+}
+
+.reset-credit-expiry-body time {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 11px;
+  line-height: 15px;
+  font-weight: var(--font-weight-extrabold);
+  font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.reset-credit-expiries.muted > span {
-  color: var(--color-text-subtle);
+.reset-credit-more,
+.reset-credit-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  color: var(--color-text-quiet);
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: var(--font-weight-bold);
+}
+
+.reset-credit-more {
+  padding-left: 25px;
 }
 
 .account-validity {
@@ -612,6 +696,11 @@
     height: auto;
     gap: 6px;
     padding: 10px 12px;
+  }
+
+  .reset-credit-expiry-body {
+    grid-template-columns: 1fr;
+    gap: 1px;
   }
 
   .account-card-actions {

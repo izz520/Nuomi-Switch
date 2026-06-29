@@ -1,6 +1,6 @@
 import { CalendarDays, Check, Clock3, Copy, Eye, KeyRound, Link, Link2, Pencil, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { isOAuthAuthMode, type CodexAccountView } from '../../types/codex';
+import { isOAuthAuthMode, type CodexAccountView, type CodexResetCreditView } from '../../types/codex';
 import type { AppError } from '../../types/system';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
@@ -60,12 +60,27 @@ function formatQuotaLabel(value?: number | null): string {
   return `${Math.max(0, Math.min(100, value))}%`;
 }
 
-function formatResetCreditExpiry(value?: number | null): string {
+function parseResetCreditTimestamp(value?: number | null): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+  return value > 10_000_000_000 ? value : value * 1000;
+}
+
+function formatResetCreditExpiry(value?: number | null): string {
+  const timestamp = parseResetCreditTimestamp(value);
+  if (!timestamp) {
     return '有效期未知';
   }
-  const timestamp = value > 10_000_000_000 ? value : value * 1000;
   return new Date(timestamp).toLocaleString();
+}
+
+function formatResetCreditDateTime(value?: number | null): string | undefined {
+  const timestamp = parseResetCreditTimestamp(value);
+  if (!timestamp) {
+    return undefined;
+  }
+  return new Date(timestamp).toISOString();
 }
 
 function getPlanTone(planType?: string | null): string {
@@ -132,6 +147,23 @@ function getOAuthBindingText(boundOAuthAccount: CodexAccountView | null): string
   return boundOAuthAccount.email ?? boundOAuthAccount.displayName;
 }
 
+function ResetCreditExpiryItem({ credit, index }: { credit: CodexResetCreditView; index: number }) {
+  const expiryText = formatResetCreditExpiry(credit.expiresAt);
+  const dateTime = formatResetCreditDateTime(credit.expiresAt);
+
+  return (
+    <span className="reset-credit-expiry-item">
+      <span className="reset-credit-expiry-index">{index + 1}</span>
+      <span className="reset-credit-expiry-body">
+        <span>到期时间</span>
+        <time dateTime={dateTime} title={expiryText}>
+          {expiryText}
+        </time>
+      </span>
+    </span>
+  );
+}
+
 export function AccountRow({
   account,
   boundOAuthAccount,
@@ -161,10 +193,10 @@ export function AccountRow({
   const expiresAtText = formatExpiry(expiresAt) ?? '未获取到期时间';
   const resetCredits = account.quota?.resetCredits ?? null;
   const resetCreditTotal = resetCredits ? Math.max(resetCredits.total, resetCredits.credits.length, 0) : null;
-  const resetCreditPreview = resetCredits?.credits.slice(0, 2) ?? [];
-  const hiddenResetCreditCount =
-    resetCreditPreview.length > 0 && resetCreditTotal !== null
-      ? Math.max(0, resetCreditTotal - resetCreditPreview.length)
+  const resetCreditItems = resetCredits?.credits ?? [];
+  const missingResetCreditExpiryCount =
+    resetCreditItems.length > 0 && resetCreditTotal !== null
+      ? Math.max(0, resetCreditTotal - resetCreditItems.length)
       : 0;
   const resetCreditEmptyText = !resetCredits
     ? '刷新后显示'
@@ -283,25 +315,28 @@ export function AccountRow({
                 <span className="quota-track">
                   <span style={{ width: `${quotaUnsupported ? 100 : normalizedWeekly}%` }} />
                 </span>
-                <span className="reset-credit-meta">
+                <span className={`reset-credit-panel ${resetCreditItems.length === 0 ? 'empty' : ''}`}>
                   <span className="reset-credit-summary">
                     <span>
                       <RotateCcw size={14} />
                       重置机会
                     </span>
-                    <strong>{resetCreditTotal === null ? '-' : `${resetCreditTotal} 次`}</strong>
+                    <strong>
+                      <span>{resetCreditTotal === null ? '-' : resetCreditTotal}</span>
+                      次可用
+                    </strong>
                   </span>
-                  {resetCreditPreview.length > 0 ? (
-                    <span className="reset-credit-expiries">
-                      {resetCreditPreview.map((credit, index) => (
-                        <span key={`${credit.expiresAt ?? 'unknown'}-${index}`}>
-                          {index + 1}. {formatResetCreditExpiry(credit.expiresAt)}
-                        </span>
+                  {resetCreditItems.length > 0 ? (
+                    <span className="reset-credit-expiry-list" aria-label="重置机会到期时间">
+                      {resetCreditItems.map((credit, index) => (
+                        <ResetCreditExpiryItem key={`${credit.expiresAt ?? 'unknown'}-${index}`} credit={credit} index={index} />
                       ))}
-                      {hiddenResetCreditCount > 0 ? <span>另 {hiddenResetCreditCount} 次</span> : null}
+                      {missingResetCreditExpiryCount > 0 ? (
+                        <span className="reset-credit-more">{missingResetCreditExpiryCount} 次未返回到期时间</span>
+                      ) : null}
                     </span>
                   ) : (
-                    <span className="reset-credit-expiries muted">
+                    <span className="reset-credit-empty">
                       <span>{resetCreditEmptyText}</span>
                     </span>
                   )}
