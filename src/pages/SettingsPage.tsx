@@ -5,8 +5,8 @@ import { Button } from '../components/ui/Button';
 import { Panel } from '../components/ui/Panel/Panel';
 import { Tabs, type Tab } from '../components/ui/Tabs/Tabs';
 import { openDataDir, openLogDir } from '../services/systemService';
-import { checkForUpdate, getAppVersion, getUpdateManifestUrl, type UpdateInfo, type UpdateStatus } from '../services/updateService';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useUpdateStore } from '../stores/useUpdateStore';
 import type { AppSettings, SystemSnapshot } from '../types/system';
 
 const pathRows: Array<{ label: string; key: keyof SystemSnapshot }> = [
@@ -42,11 +42,8 @@ export function SettingsPage() {
     saveSettings,
     detectPaths,
   } = useSettingsStore();
+  const { appVersion, updateStatus, updateInfo, updateError, loadAppVersion, checkUpdate } = useUpdateStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('about');
-  const [appVersion, setAppVersion] = useState<string>('...');
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [updateError, setUpdateError] = useState<string | null>(null);
   const [quotaSettingsDraft, setQuotaSettingsDraft] = useState<
     Pick<AppSettings, 'quotaAutoRefreshEnabled' | 'quotaAutoRefreshIntervalMinutes'> | null
   >(null);
@@ -68,31 +65,8 @@ export function SettingsPage() {
   }, [settings]);
 
   useEffect(() => {
-    void getAppVersion().then(setAppVersion).catch(() => setAppVersion('未知'));
-  }, []);
-
-  async function handleCheckUpdate() {
-    const manifestUrl = getUpdateManifestUrl();
-    if (!manifestUrl) {
-      setUpdateStatus('unconfigured');
-      setUpdateInfo(null);
-      setUpdateError(null);
-      return;
-    }
-
-    setUpdateStatus('checking');
-    setUpdateInfo(null);
-    setUpdateError(null);
-    try {
-      const currentVersion = appVersion === '...' || appVersion === '未知' ? await getAppVersion() : appVersion;
-      const nextUpdate = await checkForUpdate(currentVersion);
-      setUpdateInfo(nextUpdate);
-      setUpdateStatus(nextUpdate ? 'available' : 'current');
-    } catch (updateCheckError) {
-      setUpdateStatus('error');
-      setUpdateError(updateCheckError instanceof Error ? updateCheckError.message : '检查更新失败。');
-    }
-  }
+    void loadAppVersion();
+  }, [loadAppVersion]);
 
   async function handleSaveQuotaSettings() {
     if (!settings || !quotaSettingsDraft) {
@@ -176,7 +150,7 @@ export function SettingsPage() {
             )}
           </div>
           <div className="toolbar-actions">
-            <Button variant="secondary" loading={updateStatus === 'checking'} icon={<RefreshCw />} onClick={() => void handleCheckUpdate()}>
+            <Button variant="secondary" loading={updateStatus === 'checking'} icon={<RefreshCw />} onClick={() => void checkUpdate()}>
               检查更新
             </Button>
           </div>
