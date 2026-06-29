@@ -254,43 +254,32 @@ export function ImportDrawer() {
         </header>
 
         <div className="drawer-body">
-          <nav className="source-panel" aria-label="账号来源">
-            <div className="source-panel-heading">
-              <h3>账号来源</h3>
-              <span>选择账号进入 Nuomi Switch 的方式。</span>
-            </div>
-            <div className="source-tabs" role="tablist" aria-label="账号来源" aria-orientation="vertical">
-              {importSources.map((item) => (
-                <button
-                  aria-controls={`import-panel-${item.id}`}
-                  aria-describedby={`import-source-desc-${item.id}`}
-                  aria-label={item.label}
-                  aria-selected={source === item.id}
-                  id={`import-source-tab-${item.id}`}
-                  className={`source-tab ${source === item.id ? 'selected' : ''}`}
-                  key={item.id}
-                  role="tab"
-                  type="button"
-                  onClick={() => setSource(item.id)}
-                >
-                  <span className="source-option-icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  <span className="source-option-copy">
-                    <strong>{item.label}</strong>
-                    <span id={`import-source-desc-${item.id}`}>{item.description}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </nav>
-
           <section
             aria-labelledby={`import-source-tab-${source}`}
             className="import-workspace"
             id={`import-panel-${source}`}
             role="tabpanel"
           >
+            <div className="codex-source-tabs" role="tablist" aria-label="账号来源">
+              {importSources.map((item) => (
+                <button
+                  aria-controls={`import-panel-${item.id}`}
+                  aria-label={item.label}
+                  aria-selected={source === item.id}
+                  className={`codex-source-tab ${source === item.id ? 'active' : ''}`}
+                  id={`import-source-tab-${item.id}`}
+                  key={item.id}
+                  role="tab"
+                  title={item.description}
+                  type="button"
+                  onClick={() => setSource(item.id)}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+
             {error ? <ErrorBanner error={error} /> : null}
 
             <div className="source-summary">
