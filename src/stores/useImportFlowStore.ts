@@ -206,7 +206,7 @@ function emptyImportDraft() {
 
 export const useImportFlowStore = create<ImportFlowState>((set) => ({
   open: false,
-  source: 'local',
+  source: 'oauth',
   importing: false,
   selectingFiles: false,
   jsonText: '',
@@ -223,6 +223,7 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
   openDrawer() {
     set({
       open: true,
+      source: 'oauth',
       error: null,
       resultAccounts: [],
       failedImports: [],

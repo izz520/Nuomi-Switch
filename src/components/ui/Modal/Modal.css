@@ -8,18 +8,6 @@
   backdrop-filter: var(--blur-glass-light);
   -webkit-backdrop-filter: var(--blur-glass-light);
   z-index: 50;
-  animation: fadeIn var(--transition-slow);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: var(--blur-glass-light);
-  }
 }
 
 .modal {
@@ -32,7 +20,6 @@
   box-shadow: var(--shadow-modal), var(--shadow-glass-inset);
   backdrop-filter: var(--blur-glass-medium);
   -webkit-backdrop-filter: var(--blur-glass-medium);
-  animation: slideIn var(--transition-slow);
   position: relative;
   overflow: hidden;
 }
@@ -46,17 +33,6 @@
     transparent 55%);
   pointer-events: none;
   border-radius: inherit;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .modal-sm {
@@ -108,11 +84,4 @@
   border-top: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal-backdrop,
-  .modal {
-    animation: none;
-  }
 }

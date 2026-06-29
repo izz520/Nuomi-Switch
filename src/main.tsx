@@ -6,6 +6,7 @@ import './styles/tokens.css';
 import './styles/reset.css';
 import './styles/layout.css';
 import './styles/utilities.css';
+import './styles/dialog-motion.css';
 
 initTheme();
 

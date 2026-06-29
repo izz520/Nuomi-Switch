@@ -1,0 +1,58 @@
+/* Shared dialog entrance motion.
+   Keep this global so hand-rolled dialogs and the shared Modal component move as one system. */
+.modal-backdrop,
+.drawer-backdrop,
+.oauth-binding-modal-backdrop,
+.delete-modal-backdrop,
+.switch-modal-backdrop,
+.api-edit-modal-backdrop {
+  animation: dialog-backdrop-in var(--transition-slow);
+}
+
+.modal,
+.import-drawer,
+.oauth-binding-modal,
+.delete-modal,
+.switch-modal,
+.api-edit-modal {
+  animation: dialog-surface-in var(--transition-slow);
+}
+
+@keyframes dialog-backdrop-in {
+  from {
+    opacity: 0;
+    backdrop-filter: saturate(100%) blur(0);
+    -webkit-backdrop-filter: saturate(100%) blur(0);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .drawer-backdrop,
+  .oauth-binding-modal-backdrop,
+  .delete-modal-backdrop,
+  .switch-modal-backdrop,
+  .api-edit-modal-backdrop,
+  .modal,
+  .import-drawer,
+  .oauth-binding-modal,
+  .delete-modal,
+  .switch-modal,
+  .api-edit-modal {
+    animation: none;
+  }
+}
