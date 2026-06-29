@@ -19,6 +19,18 @@ interface ImportSourceOption {
 
 const importSources: ImportSourceOption[] = [
   {
+    id: 'oauth',
+    label: 'OAuth 登录',
+    description: '浏览器登录并回调',
+    icon: <LockKeyhole size={16} />,
+  },
+  {
+    id: 'apiKey',
+    label: 'API Key',
+    description: '添加 API Key 账号',
+    icon: <KeyRound size={16} />,
+  },
+  {
     id: 'local',
     label: '当前本地授权',
     description: '使用 ~/.codex/auth.json',
@@ -40,18 +52,6 @@ const importSources: ImportSourceOption[] = [
     id: 'token',
     label: 'Token',
     description: '粘贴 id/access/refresh token',
-    icon: <LockKeyhole size={16} />,
-  },
-  {
-    id: 'apiKey',
-    label: 'API Key',
-    description: '添加 API Key 账号',
-    icon: <KeyRound size={16} />,
-  },
-  {
-    id: 'oauth',
-    label: 'OAuth 登录',
-    description: '浏览器登录并回调',
     icon: <LockKeyhole size={16} />,
   },
 ];
@@ -246,10 +246,7 @@ export function ImportDrawer() {
     <div className="drawer-backdrop" role="presentation">
       <aside className="import-drawer" role="dialog" aria-modal="true" aria-labelledby="import-title">
         <header className="drawer-header">
-          <div>
-            <h2 id="import-title">添加账号</h2>
-            <p>从本地授权、JSON、Token 或 API Key 添加 Codex 账号。</p>
-          </div>
+          <h2 id="import-title">添加 Codex 账号</h2>
           <IconButton label="关闭添加账号抽屉" icon={<X size={16} />} onClick={closeDrawer} />
         </header>
 
