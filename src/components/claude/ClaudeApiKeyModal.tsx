@@ -118,6 +118,7 @@ export function ClaudeApiKeyModal({
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsMessage, setModelsMessage] = useState<string | null>(null);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [hasFetchedModels, setHasFetchedModels] = useState(false);
   const modelFetchSequence = useRef(0);
   const lastModelFetchKey = useRef('');
 
@@ -140,6 +141,7 @@ export function ClaudeApiKeyModal({
         : buildMappings(defaultDesktopModels, account?.desktopGatewayUpstreamModels ?? []),
     );
     setUpstreamModels(account?.desktopGatewayUpstreamModels ?? []);
+    setHasFetchedModels(Boolean(account?.desktopGatewayModels?.length || account?.desktopGatewayModelMappings?.length));
     setShowApiKey(false);
     setModelsMessage(null);
     setModelsError(null);
@@ -159,6 +161,7 @@ export function ClaudeApiKeyModal({
       setModelsLoading(false);
       setModelsMessage(null);
       setModelsError(null);
+      setHasFetchedModels(false);
       lastModelFetchKey.current = '';
       return;
     }
@@ -201,6 +204,7 @@ export function ClaudeApiKeyModal({
     payload.displayName.length > 0 &&
     payload.apiKey.length > 0 &&
     payload.apiBaseUrl.length > 0 &&
+    hasFetchedModels &&
     payload.desktopGatewayModels.length > 0 &&
     (payload.connectionMode !== 'local_mapping' || gatewayMappings.length > 0);
   const isEdit = Boolean(account);
@@ -251,6 +255,7 @@ export function ClaudeApiKeyModal({
       const resolvedAuthScheme = result.authScheme;
       setUpstreamModels(models);
       if (models.length === 0) {
+        setHasFetchedModels(false);
         setGatewayForm((state) => ({
           ...state,
           authScheme: resolvedAuthScheme ?? state.authScheme,
@@ -261,6 +266,7 @@ export function ClaudeApiKeyModal({
         return;
       }
       const claudeModels = models.filter(isClaudeRouteModel);
+      setHasFetchedModels(true);
       if (claudeModels.length > 0) {
         setGatewayForm((state) => ({
           ...state,
@@ -285,6 +291,7 @@ export function ClaudeApiKeyModal({
       }
       setModelsError(error instanceof Error ? error.message : '查询模型失败，请检查配置。');
       setModelsMessage(null);
+      setHasFetchedModels(false);
       setGatewayForm((state) => ({ ...state, connectionMode: 'local_mapping' }));
     } finally {
       if (modelFetchSequence.current === sequence) {
@@ -296,6 +303,8 @@ export function ClaudeApiKeyModal({
   function updateMapping(index: number, patch: Partial<ClaudeDesktopGatewayModelMapping>) {
     setGatewayMappings((items) => items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
   }
+
+  const shouldShowGatewayModels = hasFetchedModels;
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? '编辑 Claude 账号' : '添加 Claude 账号'} size="lg" footer={footer}>
@@ -409,115 +418,119 @@ export function ClaudeApiKeyModal({
               </div>
             ) : null}
 
-            <div className="claude-field">
-              <span>连接方式</span>
-              <div className="claude-segmented two">
-                {([
-                  ['direct', '直连'],
-                  ['local_mapping', '本地网关映射'],
-                ] as const).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`claude-segmented-option ${gatewayForm.connectionMode === value ? 'active' : ''}`}
-                    onClick={() => setGatewayForm((state) => ({ ...state, connectionMode: value }))}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {gatewayForm.connectionMode === 'direct' ? (
-              <label className="claude-field">
-                <span>模型目录</span>
-                <textarea
-                  rows={7}
-                  value={gatewayForm.modelsText}
-                  onChange={(event) => setGatewayForm((state) => ({ ...state, modelsText: event.target.value }))}
-                  placeholder="每行一个 Claude 可识别模型，例如 claude-sonnet-4-6"
-                />
-              </label>
-            ) : (
-              <div className="claude-mapping-section">
-                <div className="claude-mapping-heading">
-                  <div>
-                    <h3>模型目录</h3>
-                    <p>左侧是 Claude CLI 看到的模型名，右侧是供应商真实模型。</p>
+            {shouldShowGatewayModels ? (
+              <>
+                <div className="claude-field">
+                  <span>连接方式</span>
+                  <div className="claude-segmented two">
+                    {([
+                      ['direct', '直连'],
+                      ['local_mapping', '本地网关映射'],
+                    ] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`claude-segmented-option ${gatewayForm.connectionMode === value ? 'active' : ''}`}
+                        onClick={() => setGatewayForm((state) => ({ ...state, connectionMode: value }))}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                  <Button
-                    variant="ghost"
-                    icon={<Plus size={16} />}
-                    onClick={() =>
-                      setGatewayMappings((items) => [
-                        ...items,
-                        {
-                          desktopModel: 'claude-sonnet-4-6',
-                          upstreamModel: upstreamModels[0] ?? '',
-                          labelOverride: upstreamModels[0] ?? '',
-                          supports1m: false,
-                        },
-                      ])
-                    }
-                  >
-                    添加映射
-                  </Button>
                 </div>
-                <div className="claude-mapping-list">
-                  {gatewayMappings.map((mapping, index) => (
-                    <div className="claude-mapping-row" key={`${mapping.desktopModel}-${index}`}>
-                      <input
-                        value={mapping.desktopModel}
-                        onChange={(event) => updateMapping(index, { desktopModel: event.target.value })}
-                        placeholder="claude-sonnet-4-6"
-                      />
-                      <select
-                        value={mapping.upstreamModel}
-                        onChange={(event) =>
-                          updateMapping(index, {
-                            upstreamModel: event.target.value,
-                            labelOverride: event.target.value,
-                          })
+
+                {gatewayForm.connectionMode === 'direct' ? (
+                  <label className="claude-field">
+                    <span>模型目录</span>
+                    <textarea
+                      rows={7}
+                      value={gatewayForm.modelsText}
+                      onChange={(event) => setGatewayForm((state) => ({ ...state, modelsText: event.target.value }))}
+                      placeholder="每行一个 Claude 可识别模型，例如 claude-sonnet-4-6"
+                    />
+                  </label>
+                ) : (
+                  <div className="claude-mapping-section">
+                    <div className="claude-mapping-heading">
+                      <div>
+                        <h3>模型目录</h3>
+                        <p>左侧是 Claude CLI 看到的模型名，右侧是供应商真实模型。</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        icon={<Plus size={16} />}
+                        onClick={() =>
+                          setGatewayMappings((items) => [
+                            ...items,
+                            {
+                              desktopModel: 'claude-sonnet-4-6',
+                              upstreamModel: upstreamModels[0] ?? '',
+                              labelOverride: upstreamModels[0] ?? '',
+                              supports1m: false,
+                            },
+                          ])
                         }
                       >
-                        {upstreamModels.length === 0 ? <option value="">手动填写上游模型</option> : null}
-                        {upstreamModels.map((model) => (
-                          <option value={model} key={model}>{model}</option>
-                        ))}
-                      </select>
-                      {upstreamModels.length === 0 ? (
-                        <input
-                          value={mapping.upstreamModel}
-                          onChange={(event) =>
-                            updateMapping(index, {
-                              upstreamModel: event.target.value,
-                              labelOverride: event.target.value,
-                            })
-                          }
-                          placeholder="上游模型"
-                        />
-                      ) : null}
-                      <label className="claude-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={mapping.supports1m === true}
-                          onChange={(event) => updateMapping(index, { supports1m: event.target.checked })}
-                        />
-                        <span>1M上下文</span>
-                      </label>
-                      <button
-                        type="button"
-                        className="claude-mapping-delete"
-                        aria-label="删除映射"
-                        onClick={() => setGatewayMappings((items) => items.filter((_, itemIndex) => itemIndex !== index))}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                        添加映射
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    <div className="claude-mapping-list">
+                      {gatewayMappings.map((mapping, index) => (
+                        <div className="claude-mapping-row" key={`${mapping.desktopModel}-${index}`}>
+                          <input
+                            value={mapping.desktopModel}
+                            onChange={(event) => updateMapping(index, { desktopModel: event.target.value })}
+                            placeholder="claude-sonnet-4-6"
+                          />
+                          <select
+                            value={mapping.upstreamModel}
+                            onChange={(event) =>
+                              updateMapping(index, {
+                                upstreamModel: event.target.value,
+                                labelOverride: event.target.value,
+                              })
+                            }
+                          >
+                            {upstreamModels.length === 0 ? <option value="">手动填写上游模型</option> : null}
+                            {upstreamModels.map((model) => (
+                              <option value={model} key={model}>{model}</option>
+                            ))}
+                          </select>
+                          {upstreamModels.length === 0 ? (
+                            <input
+                              value={mapping.upstreamModel}
+                              onChange={(event) =>
+                                updateMapping(index, {
+                                  upstreamModel: event.target.value,
+                                  labelOverride: event.target.value,
+                                })
+                              }
+                              placeholder="上游模型"
+                            />
+                          ) : null}
+                          <label className="claude-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={mapping.supports1m === true}
+                              onChange={(event) => updateMapping(index, { supports1m: event.target.checked })}
+                            />
+                            <span>1M上下文</span>
+                          </label>
+                          <button
+                            type="button"
+                            className="claude-mapping-delete"
+                            aria-label="删除映射"
+                            onClick={() => setGatewayMappings((items) => items.filter((_, itemIndex) => itemIndex !== index))}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>
