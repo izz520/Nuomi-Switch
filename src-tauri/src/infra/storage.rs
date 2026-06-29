@@ -135,16 +135,19 @@ pub fn load_settings() -> AppResult<AppSettings> {
             "请打开数据目录并检查文件权限。",
         )
     })?;
-    serde_json::from_str(&content).map_err(|err| {
-        AppError::new(
-            "SETTINGS_INVALID_FORMAT",
-            format!("解析 {} 失败：{}", path.display(), err),
-            "请重置设置，或手动编辑该文件。",
-        )
-    })
+    serde_json::from_str::<AppSettings>(&content)
+        .map(|settings| settings.normalized())
+        .map_err(|err| {
+            AppError::new(
+                "SETTINGS_INVALID_FORMAT",
+                format!("解析 {} 失败：{}", path.display(), err),
+                "请重置设置，或手动编辑该文件。",
+            )
+        })
 }
 
 pub fn save_settings(settings: AppSettings) -> AppResult<AppSettings> {
+    let settings = settings.normalized();
     let path = paths::settings_file_path()?;
     let content = serde_json::to_vec_pretty(&settings).map_err(|err| {
         AppError::new(
@@ -194,6 +197,8 @@ mod tests {
             codex_home_path: Some("/tmp/codex-home".to_string()),
             auth_file_path: Some("/tmp/codex-home/auth.json".to_string()),
             theme: "dark".to_string(),
+            quota_auto_refresh_enabled: true,
+            quota_auto_refresh_interval_minutes: 5,
             quota_refresh_on_start: true,
         };
 
@@ -205,8 +210,54 @@ mod tests {
         assert_eq!(loaded.auth_file_path, settings.auth_file_path);
         assert_eq!(loaded.theme, settings.theme);
         assert_eq!(
+            loaded.quota_auto_refresh_enabled,
+            settings.quota_auto_refresh_enabled
+        );
+        assert_eq!(
+            loaded.quota_auto_refresh_interval_minutes,
+            settings.quota_auto_refresh_interval_minutes
+        );
+        assert_eq!(
             loaded.quota_refresh_on_start,
             settings.quota_refresh_on_start
         );
+    }
+
+    #[test]
+    fn load_settings_backfills_auto_quota_refresh_defaults() {
+        let _env = TestEnv::new("settings-auto-refresh-defaults");
+        let path = paths::settings_file_path().expect("settings path should resolve");
+        std::fs::write(
+            &path,
+            r#"{
+              "schemaVersion": "1.0.0",
+              "theme": "system",
+              "quotaRefreshOnStart": false
+            }"#,
+        )
+        .expect("legacy settings should be written");
+
+        let loaded = load_settings().expect("settings should load");
+
+        assert!(loaded.quota_auto_refresh_enabled);
+        assert_eq!(loaded.quota_auto_refresh_interval_minutes, 5);
+    }
+
+    #[test]
+    fn save_settings_clamps_too_short_auto_refresh_interval() {
+        let _env = TestEnv::new("settings-auto-refresh-clamp");
+        let settings = AppSettings {
+            schema_version: "1.0.0".to_string(),
+            codex_home_path: None,
+            auth_file_path: None,
+            theme: "system".to_string(),
+            quota_auto_refresh_enabled: true,
+            quota_auto_refresh_interval_minutes: 1,
+            quota_refresh_on_start: false,
+        };
+
+        let saved = save_settings(settings).expect("settings should save");
+
+        assert_eq!(saved.quota_auto_refresh_interval_minutes, 5);
     }
 }

@@ -11,6 +11,8 @@ export interface AppSettings {
   codexHomePath?: string | null;
   authFilePath?: string | null;
   theme: 'system' | 'light' | 'dark';
+  quotaAutoRefreshEnabled: boolean;
+  quotaAutoRefreshIntervalMinutes: number;
   quotaRefreshOnStart: boolean;
 }
 

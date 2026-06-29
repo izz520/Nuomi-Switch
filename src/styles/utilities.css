@@ -52,6 +52,27 @@
   align-items: center;
 }
 
+.settings-tabs {
+  display: flex;
+  margin-bottom: var(--space-4);
+}
+
+.settings-about-header {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.settings-about-header img {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+}
+
 /* Settings Grid (for SettingsPage) */
 .settings-grid {
   display: grid;
@@ -89,6 +110,97 @@
   overflow-wrap: anywhere;
   color: var(--color-text-strong);
   font-size: 13px;
+}
+
+.quota-settings-grid {
+  max-width: 640px;
+}
+
+.settings-control-row {
+  cursor: pointer;
+}
+
+.settings-control-row input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.settings-switch {
+  appearance: none;
+  position: relative;
+  width: 42px !important;
+  height: 24px !important;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-control);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.settings-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+
+.settings-switch:checked {
+  border-color: transparent;
+  background: var(--color-primary);
+}
+
+.settings-switch:checked::after {
+  transform: translateX(18px);
+}
+
+.settings-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary-active);
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.settings-link-button:hover {
+  color: var(--color-primary-hover);
+}
+
+.settings-number-control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.settings-number-control input {
+  width: 110px;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+  color: var(--color-text-strong);
+  font: inherit;
+}
+
+.settings-number-control input:focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--color-primary);
 }
 
 .update-status {
@@ -189,6 +301,10 @@
   .settings-row {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .settings-about-header {
+    grid-template-columns: 1fr;
   }
 
   .update-status {

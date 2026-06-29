@@ -27,6 +27,9 @@ pub fn run() {
                 }
                 drop(handle);
             });
+            tauri::async_runtime::spawn(async move {
+                crate::services::quota_scheduler_service::run_auto_refresh_loop().await;
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

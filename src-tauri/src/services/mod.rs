@@ -9,6 +9,7 @@ pub mod codex_official_app_server_service;
 pub mod codex_session_visibility_service;
 pub mod import_service;
 pub mod oauth_service;
+pub mod quota_scheduler_service;
 pub mod quota_service;
 pub mod settings_service;
 pub mod switch_service;
