@@ -4,6 +4,7 @@ import { isOAuthAuthMode, type CodexAccountView, type CodexResetCreditView } fro
 import type { AppError } from '../../types/system';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
+import { Modal } from '../ui/Modal/Modal';
 import './AccountRow.css';
 
 interface AccountRowProps {
@@ -83,6 +84,31 @@ function formatResetCreditDateTime(value?: number | null): string | undefined {
   return new Date(timestamp).toISOString();
 }
 
+function formatResetCreditExpiryParts(value?: number | null): { date: string; time: string; full: string } {
+  const timestamp = parseResetCreditTimestamp(value);
+  if (!timestamp) {
+    return {
+      date: '有效期未知',
+      time: '--:--:--',
+      full: '有效期未知',
+    };
+  }
+  const date = new Date(timestamp);
+  const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const timeText = date.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  return {
+    date: dateText,
+    time: timeText,
+    full: `${dateText} ${timeText}`,
+  };
+}
+
 function getPlanTone(planType?: string | null): string {
   const plan = planType?.toLowerCase() ?? '';
   if (plan.includes('pro')) {
@@ -147,17 +173,27 @@ function getOAuthBindingText(boundOAuthAccount: CodexAccountView | null): string
   return boundOAuthAccount.email ?? boundOAuthAccount.displayName;
 }
 
-function ResetCreditExpiryItem({ credit, index }: { credit: CodexResetCreditView; index: number }) {
+function ResetCreditExpiryItem({
+  credit,
+  index,
+  variant = 'compact',
+}: {
+  credit: CodexResetCreditView;
+  index: number;
+  variant?: 'compact' | 'modal';
+}) {
   const expiryText = formatResetCreditExpiry(credit.expiresAt);
+  const expiryParts = formatResetCreditExpiryParts(credit.expiresAt);
   const dateTime = formatResetCreditDateTime(credit.expiresAt);
 
   return (
-    <span className="reset-credit-expiry-item">
+    <span className={`reset-credit-expiry-item reset-credit-expiry-item-${variant}`}>
       <span className="reset-credit-expiry-index">{index + 1}</span>
       <span className="reset-credit-expiry-body">
-        <span>到期时间</span>
-        <time dateTime={dateTime} title={expiryText}>
-          {expiryText}
+        <span className="reset-credit-expiry-label">到期时间</span>
+        <time dateTime={dateTime} title={expiryText} aria-label={expiryParts.full}>
+          <span className="reset-credit-expiry-date">{expiryParts.date}</span>
+          <span className="reset-credit-expiry-clock">{expiryParts.time}</span>
         </time>
       </span>
     </span>
@@ -178,6 +214,7 @@ export function AccountRow({
   onReauthenticate,
 }: AccountRowProps) {
   const [copiedField, setCopiedField] = useState<'apiKey' | 'apiBaseUrl' | null>(null);
+  const [showResetCreditsModal, setShowResetCreditsModal] = useState(false);
   const quotaUnsupported = account.authMode === 'api_key';
   const planText = quotaUnsupported ? 'API' : account.planType ?? '免费';
   const hourly = account.quota?.hourlyRemainingPercent;
@@ -220,7 +257,6 @@ export function AccountRow({
           <strong>{account.email ?? account.displayName}</strong>
           <span className={`account-plan-badge account-plan-${planTone}`}>{planText}</span>
         </span>
-        {!quotaUnsupported && account.accountId ? <code className="account-card-id">{account.accountId}</code> : null}
 
         {quotaUnsupported ? (
           <>
@@ -315,7 +351,17 @@ export function AccountRow({
                 <span className="quota-track">
                   <span style={{ width: `${quotaUnsupported ? 100 : normalizedWeekly}%` }} />
                 </span>
-                <span className={`reset-credit-panel ${resetCreditItems.length === 0 ? 'empty' : ''}`}>
+                <button
+                  type="button"
+                  className={`reset-credit-panel ${resetCreditItems.length === 0 ? 'empty' : ''}`}
+                  disabled={resetCreditItems.length === 0}
+                  aria-label={
+                    resetCreditTotal === null
+                      ? '重置机会，到期时间需要刷新后显示'
+                      : `重置机会，${resetCreditTotal} 次可用，查看到期时间`
+                  }
+                  onClick={() => setShowResetCreditsModal(true)}
+                >
                   <span className="reset-credit-summary">
                     <span>
                       <RotateCcw size={14} />
@@ -326,21 +372,8 @@ export function AccountRow({
                       次可用
                     </strong>
                   </span>
-                  {resetCreditItems.length > 0 ? (
-                    <span className="reset-credit-expiry-list" aria-label="重置机会到期时间">
-                      {resetCreditItems.map((credit, index) => (
-                        <ResetCreditExpiryItem key={`${credit.expiresAt ?? 'unknown'}-${index}`} credit={credit} index={index} />
-                      ))}
-                      {missingResetCreditExpiryCount > 0 ? (
-                        <span className="reset-credit-more">{missingResetCreditExpiryCount} 次未返回到期时间</span>
-                      ) : null}
-                    </span>
-                  ) : (
-                    <span className="reset-credit-empty">
-                      <span>{resetCreditEmptyText}</span>
-                    </span>
-                  )}
-                </span>
+                  <span className="reset-credit-hint">{resetCreditItems.length > 0 ? '点击查看到期时间' : resetCreditEmptyText}</span>
+                </button>
               </span>
             )}
           </div>
@@ -383,6 +416,33 @@ export function AccountRow({
           onClick={() => onDelete(account.id)}
         />
       </div>
+      <Modal
+        open={showResetCreditsModal}
+        onClose={() => setShowResetCreditsModal(false)}
+        title="重置机会到期时间"
+        size="md"
+      >
+        <div className="reset-credit-modal">
+          <div className="reset-credit-modal-summary">
+            <span>当前账号</span>
+            <strong>{account.email ?? account.displayName}</strong>
+            <em>{resetCreditTotal === null ? '-' : resetCreditTotal} 次可用</em>
+          </div>
+          <div className="reset-credit-modal-list" aria-label="全部重置机会到期时间">
+            {resetCreditItems.map((credit, index) => (
+              <ResetCreditExpiryItem
+                key={`${credit.expiresAt ?? 'unknown'}-${index}`}
+                credit={credit}
+                index={index}
+                variant="modal"
+              />
+            ))}
+            {missingResetCreditExpiryCount > 0 ? (
+              <span className="reset-credit-more">{missingResetCreditExpiryCount} 次未返回到期时间</span>
+            ) : null}
+          </div>
+        </div>
+      </Modal>
     </article>
   );
 }

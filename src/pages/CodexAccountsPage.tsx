@@ -25,6 +25,61 @@ function matchesQuery(account: CodexAccountView, query: string): boolean {
   return haystack.includes(query);
 }
 
+function getMockResetCreditCount(): number | null {
+  if (!import.meta.env.DEV || typeof window === 'undefined') {
+    return null;
+  }
+  const value = new URLSearchParams(window.location.search).get('mockResetCredits');
+  if (value === null) {
+    return null;
+  }
+  const count = Number(value);
+  if (!Number.isInteger(count) || count < 0) {
+    return 20;
+  }
+  return Math.min(count, 99);
+}
+
+function createMockResetCreditAccount(count: number): CodexAccountView {
+  const firstExpiry = new Date('2026-07-12T13:05:02+08:00').getTime();
+  const secondExpiry = new Date('2026-07-18T08:50:14+08:00').getTime();
+  const credits = Array.from({ length: count }, (_, index) => {
+    const expiresAt =
+      index === 0
+        ? firstExpiry
+        : index === 1
+          ? secondExpiry
+          : firstExpiry + (index + 2) * 86_400_000 + index * 3_600_000;
+    return { expiresAt };
+  });
+
+  return {
+    id: 'mock-reset-credits',
+    displayName: '1547471276@qq.com',
+    email: '1547471276@qq.com',
+    authMode: 'oauth',
+    accountId: '39e543ed-4ffc-4649-8bff-cdf63559b4f8',
+    planType: 'team',
+    subscriptionActiveUntil: '2026-07-12T16:50:02+08:00',
+    quota: {
+      hourlyRemainingPercent: 99,
+      weeklyRemainingPercent: 100,
+      resetCredits: {
+        total: count,
+        credits,
+        updatedAt: Date.now(),
+      },
+      updatedAt: Date.now(),
+      stale: false,
+    },
+    quotaError: null,
+    tags: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    isCurrent: false,
+  };
+}
+
 interface CodexAccountsPageProps {
   onOpenSessions: () => void;
 }
@@ -57,6 +112,12 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
   const [editingApiAccountId, setEditingApiAccountId] = useState<string | null>(null);
   const [bindingApiAccountId, setBindingApiAccountId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const mockResetCreditCount = getMockResetCreditCount();
+  const previewAccounts = useMemo(
+    () => (mockResetCreditCount === null ? accounts : [createMockResetCreditAccount(mockResetCreditCount)]),
+    [accounts, mockResetCreditCount],
+  );
+  const isPreviewMode = mockResetCreditCount !== null;
 
   useEffect(() => {
     void loadAccounts();
@@ -64,20 +125,20 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
   }, [loadAccounts, loadSessions]);
 
   const oauthAccountCount = useMemo(
-    () => accounts.filter((account) => isOAuthAuthMode(account.authMode)).length,
-    [accounts],
+    () => previewAccounts.filter((account) => isOAuthAuthMode(account.authMode)).length,
+    [previewAccounts],
   );
   const apiAccountCount = useMemo(
-    () => accounts.filter((account) => account.authMode === 'api_key').length,
-    [accounts],
+    () => previewAccounts.filter((account) => account.authMode === 'api_key').length,
+    [previewAccounts],
   );
   const filteredAccounts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (query.length === 0) {
-      return accounts;
+      return previewAccounts;
     }
-    return accounts.filter((account) => matchesQuery(account, query));
-  }, [accounts, searchQuery]);
+    return previewAccounts.filter((account) => matchesQuery(account, query));
+  }, [previewAccounts, searchQuery]);
   const pendingSwitchAccount = useMemo(
     () => accounts.find((account) => account.id === pendingSwitchAccountId) ?? null,
     [accounts, pendingSwitchAccountId],
@@ -118,11 +179,11 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
 
   return (
     <>
-      {error ? <ErrorBanner error={error} /> : null}
+      {!isPreviewMode && error ? <ErrorBanner error={error} /> : null}
       {lastSwitchNotice ? <div className="account-switch-notice">{lastSwitchNotice}</div> : null}
 
       <div className="accounts-stats" aria-label="Codex 账号统计">
-        <StatCard icon={<Users size={19} />} iconColor="primary" label="Codex 账号" value={accounts.length} meta="个账号" />
+        <StatCard icon={<Users size={19} />} iconColor="primary" label="Codex 账号" value={previewAccounts.length} meta="个账号" />
         <StatCard icon={<Crown size={19} />} iconColor="blue" label="OAuth 账号" value={oauthAccountCount} meta="个账号" />
         <StatCard icon={<KeyRound size={19} />} iconColor="green" label="API Key 账号" value={apiAccountCount} meta="个账号" />
         <StatCard icon={<History size={19} />} iconColor="purple" label="会话数" value={sessions.length} meta="条会话" />
@@ -140,7 +201,7 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
             aria-label="刷新全部 Codex 账号额度"
             icon={<RefreshCw size={16} />}
             loading={refreshingAll}
-            disabled={loading || oauthAccountCount === 0}
+            disabled={loading || oauthAccountCount === 0 || isPreviewMode}
             onClick={() => void refreshAllQuotas()}
           >
             刷新
@@ -152,8 +213,8 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
       </div>
 
       <div className="account-card-grid">
-        {loading ? <p className="account-list-message">正在加载 Codex 账号...</p> : null}
-        {!loading && accounts.length === 0 ? (
+        {loading && !isPreviewMode ? <p className="account-list-message">正在加载 Codex 账号...</p> : null}
+        {!loading && previewAccounts.length === 0 ? (
           <EmptyState
             title="还没有 Codex 账号"
             description="添加当前本地 Codex 授权，或导入另一个账号。"
@@ -164,7 +225,7 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
             }
           />
         ) : null}
-        {!loading && accounts.length > 0 && filteredAccounts.length === 0 ? (
+        {!loading && previewAccounts.length > 0 && filteredAccounts.length === 0 ? (
           <p className="account-list-message">没有匹配 "{searchQuery.trim()}" 的 Codex 账号。</p>
         ) : null}
         {filteredAccounts.map((account) => (
@@ -172,7 +233,7 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
             account={account}
             boundOAuthAccount={
               account.boundOauthAccountId
-                ? accounts.find((candidate) => candidate.id === account.boundOauthAccountId) ?? null
+                ? previewAccounts.find((candidate) => candidate.id === account.boundOauthAccountId) ?? null
                 : null
             }
             key={account.id}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { IconButton } from '../IconButton';
 import './Modal.css';
@@ -44,7 +45,7 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       role="presentation"
@@ -77,6 +78,7 @@ export function Modal({
 
         {footer ? <footer className="modal-footer">{footer}</footer> : null}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
