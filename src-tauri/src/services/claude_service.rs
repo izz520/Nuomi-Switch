@@ -941,41 +941,81 @@ pub fn update_desktop_gateway(
 }
 
 pub fn import_api_key(input: ClaudeApiKeyInput) -> AppResult<ClaudeAccountView> {
+    let display_name = normalize_required(
+        &input.display_name,
+        "CLAUDE_API_NAME_EMPTY",
+        "显示名称不能为空。",
+        "请输入一个易于识别的 Gateway 名称。",
+    )?;
+    let api_key = normalize_required(
+        &input.api_key,
+        "CLAUDE_API_KEY_EMPTY",
+        "Gateway API Key 不能为空。",
+        "请粘贴有效的 Gateway API Key。",
+    )?;
+    let api_base_url = normalize_required_url(
+        &input.api_base_url,
+        "CLAUDE_API_BASE_URL_EMPTY",
+        "Base URL 不能为空。",
+        "请填写完整的 Base URL。",
+    )?;
+    let connection_mode = normalize_gateway_connection_mode(&input.connection_mode);
+    let mut desktop_gateway_models = normalize_model_catalog(Some(input.desktop_gateway_models));
+    let desktop_gateway_upstream_models =
+        normalize_model_catalog(input.desktop_gateway_upstream_models);
+    let mut desktop_gateway_model_mappings =
+        normalize_gateway_mappings(input.desktop_gateway_model_mappings);
+
+    if connection_mode == "local_mapping" {
+        if desktop_gateway_model_mappings.is_none() {
+            if let (Some(desktop_models), Some(upstream_models)) = (
+                desktop_gateway_models.as_ref(),
+                desktop_gateway_upstream_models.as_ref(),
+            ) {
+                desktop_gateway_model_mappings = Some(build_default_gateway_mappings(
+                    desktop_models,
+                    upstream_models,
+                ));
+            }
+        }
+        let mappings = desktop_gateway_model_mappings
+            .as_ref()
+            .filter(|items| !items.is_empty())
+            .ok_or_else(|| {
+                AppError::new(
+                    "CLAUDE_API_GATEWAY_MAPPING_EMPTY",
+                    "本地网关映射不能为空。",
+                    "请至少添加一个模型映射。",
+                )
+            })?;
+        desktop_gateway_models = normalize_model_catalog(Some(
+            mappings
+                .iter()
+                .map(|mapping| mapping.desktop_model.clone())
+                .collect(),
+        ));
+    }
+
     let account = ClaudeAccount {
-        id: make_account_id("claude-api", &input.display_name),
-        display_name: normalize_required(
-            &input.display_name,
-            "CLAUDE_API_NAME_EMPTY",
-            "显示名称不能为空。",
-            "请输入一个易于识别的 API Key 名称。",
-        )?,
+        id: make_account_id("claude-api", &display_name),
+        display_name,
         email: None,
         auth_mode: ClaudeAuthMode::ApiKey,
         account_id: None,
         organization_name: None,
         plan_type: None,
-        api_key: Some(normalize_required(
-            &input.api_key,
-            "CLAUDE_API_KEY_EMPTY",
-            "API Key 不能为空。",
-            "请粘贴有效的 API Key。",
-        )?),
-        api_base_url: Some(normalize_required(
-            &input.api_base_url,
-            "CLAUDE_API_BASE_URL_EMPTY",
-            "Base URL 不能为空。",
-            "请填写完整的 Base URL。",
-        )?),
+        api_key: Some(api_key),
+        api_base_url: Some(api_base_url),
         desktop_profile_dir: None,
         claude_credentials_raw: None,
         claude_config_raw: None,
-        desktop_gateway_auth_scheme: None,
-        desktop_gateway_connection_mode: None,
-        desktop_gateway_models: None,
-        desktop_gateway_upstream_models: None,
-        desktop_gateway_model_mappings: None,
+        desktop_gateway_auth_scheme: Some(normalize_gateway_auth_scheme(&input.auth_scheme)),
+        desktop_gateway_connection_mode: Some(connection_mode),
+        desktop_gateway_models,
+        desktop_gateway_upstream_models,
+        desktop_gateway_model_mappings,
         tags: vec!["api".to_string(), "cli".to_string()],
-        note: Some("Claude CLI API Key".to_string()),
+        note: Some("Claude CLI Gateway".to_string()),
         created_at: now_timestamp(),
         updated_at: now_timestamp(),
         last_used_at: None,
@@ -1003,9 +1043,46 @@ pub fn update_api_key(account_id: &str, input: ClaudeApiKeyInput) -> AppResult<C
         })?;
     if file.accounts[index].auth_mode != ClaudeAuthMode::ApiKey {
         return Err(AppError::new(
-            "CLAUDE_ACCOUNT_MODE_MISMATCH",
-            "该账号不是 API Key 类型。",
-            "请选择一个 Claude API Key 账号。",
+        "CLAUDE_ACCOUNT_MODE_MISMATCH",
+            "该账号不是 Gateway 类型。",
+            "请选择一个 Claude Gateway 账号。",
+        ));
+    }
+
+    let connection_mode = normalize_gateway_connection_mode(&input.connection_mode);
+    let mut desktop_gateway_models = normalize_model_catalog(Some(input.desktop_gateway_models));
+    let desktop_gateway_upstream_models =
+        normalize_model_catalog(input.desktop_gateway_upstream_models);
+    let mut desktop_gateway_model_mappings =
+        normalize_gateway_mappings(input.desktop_gateway_model_mappings);
+
+    if connection_mode == "local_mapping" {
+        if desktop_gateway_model_mappings.is_none() {
+            if let (Some(desktop_models), Some(upstream_models)) = (
+                desktop_gateway_models.as_ref(),
+                desktop_gateway_upstream_models.as_ref(),
+            ) {
+                desktop_gateway_model_mappings = Some(build_default_gateway_mappings(
+                    desktop_models,
+                    upstream_models,
+                ));
+            }
+        }
+        let mappings = desktop_gateway_model_mappings
+            .as_ref()
+            .filter(|items| !items.is_empty())
+            .ok_or_else(|| {
+                AppError::new(
+                    "CLAUDE_API_GATEWAY_MAPPING_EMPTY",
+                    "本地网关映射不能为空。",
+                    "请至少添加一个模型映射。",
+                )
+            })?;
+        desktop_gateway_models = normalize_model_catalog(Some(
+            mappings
+                .iter()
+                .map(|mapping| mapping.desktop_model.clone())
+                .collect(),
         ));
     }
 
@@ -1013,20 +1090,26 @@ pub fn update_api_key(account_id: &str, input: ClaudeApiKeyInput) -> AppResult<C
         &input.display_name,
         "CLAUDE_API_NAME_EMPTY",
         "显示名称不能为空。",
-        "请输入一个易于识别的 API Key 名称。",
+        "请输入一个易于识别的 Gateway 名称。",
     )?;
     file.accounts[index].api_key = Some(normalize_required(
         &input.api_key,
         "CLAUDE_API_KEY_EMPTY",
-        "API Key 不能为空。",
-        "请粘贴有效的 API Key。",
+        "Gateway API Key 不能为空。",
+        "请粘贴有效的 Gateway API Key。",
     )?);
-    file.accounts[index].api_base_url = Some(normalize_required(
+    file.accounts[index].api_base_url = Some(normalize_required_url(
         &input.api_base_url,
         "CLAUDE_API_BASE_URL_EMPTY",
         "Base URL 不能为空。",
         "请填写完整的 Base URL。",
     )?);
+    file.accounts[index].desktop_gateway_auth_scheme =
+        Some(normalize_gateway_auth_scheme(&input.auth_scheme));
+    file.accounts[index].desktop_gateway_connection_mode = Some(connection_mode);
+    file.accounts[index].desktop_gateway_models = desktop_gateway_models;
+    file.accounts[index].desktop_gateway_upstream_models = desktop_gateway_upstream_models;
+    file.accounts[index].desktop_gateway_model_mappings = desktop_gateway_model_mappings;
     file.accounts[index].updated_at = now_timestamp();
     let updated = file.accounts[index].clone();
     save_accounts_file(file)?;

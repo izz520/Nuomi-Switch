@@ -105,11 +105,21 @@ pub fn import_claude_api_key(
     display_name: String,
     api_key: String,
     api_base_url: String,
+    auth_scheme: String,
+    connection_mode: String,
+    desktop_gateway_models: Vec<String>,
+    desktop_gateway_upstream_models: Option<Vec<String>>,
+    desktop_gateway_model_mappings: Option<Vec<ClaudeDesktopGatewayModelMapping>>,
 ) -> AppResult<ClaudeAccountView> {
     claude_service::import_api_key(ClaudeApiKeyInput {
         display_name,
         api_key,
         api_base_url,
+        auth_scheme,
+        connection_mode,
+        desktop_gateway_models,
+        desktop_gateway_upstream_models,
+        desktop_gateway_model_mappings,
     })
 }
 
@@ -119,6 +129,11 @@ pub fn update_claude_api_key(
     display_name: String,
     api_key: String,
     api_base_url: String,
+    auth_scheme: String,
+    connection_mode: String,
+    desktop_gateway_models: Vec<String>,
+    desktop_gateway_upstream_models: Option<Vec<String>>,
+    desktop_gateway_model_mappings: Option<Vec<ClaudeDesktopGatewayModelMapping>>,
 ) -> AppResult<ClaudeAccountView> {
     claude_service::update_api_key(
         &account_id,
@@ -126,6 +141,11 @@ pub fn update_claude_api_key(
             display_name,
             api_key,
             api_base_url,
+            auth_scheme,
+            connection_mode,
+            desktop_gateway_models,
+            desktop_gateway_upstream_models,
+            desktop_gateway_model_mappings,
         },
     )
 }

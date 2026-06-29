@@ -3,9 +3,6 @@ import {
   Bot,
   Cable,
   ExternalLink,
-  FolderOpen,
-  HardDriveDownload,
-  KeyRound,
   MonitorSmartphone,
   Plus,
   RefreshCcw,
@@ -145,14 +142,8 @@ export function ClaudeAccountsPage() {
               </>
             ) : (
               <>
-                <Button variant="secondary" loading={saving} icon={<HardDriveDownload size={16} />} onClick={() => void importCliFromLocal()}>
-                  导入本机
-                </Button>
-                <Button variant="secondary" loading={saving} icon={<ShieldUser size={16} />} onClick={() => void beginCliOauth()}>
-                  OAuth 登录
-                </Button>
-                <Button variant="primary" icon={<KeyRound size={16} />} onClick={() => setModal({ type: 'create-api' })}>
-                  添加 API Key
+                <Button variant="primary" icon={<Plus size={16} />} onClick={() => setModal({ type: 'create-api' })}>
+                  添加账号
                 </Button>
               </>
             )}
@@ -199,7 +190,7 @@ export function ClaudeAccountsPage() {
           {!loading && visibleAccounts.length === 0 ? (
             <EmptyState
               title={workspaceTab === 'desktop' ? '还没有 Claude Desktop 账号' : '还没有 Claude CLI 账号'}
-              description={workspaceTab === 'desktop' ? '导入本机 Desktop 登录态，或添加 Gateway 配置。' : '导入本机 CLI 登录态、完成 OAuth，或录入 API Key。'}
+              description={workspaceTab === 'desktop' ? '导入本机 Desktop 登录态，或添加 Gateway 配置。' : '导入本机 CLI 登录态、完成 OAuth，或添加 Gateway 配置。'}
             />
           ) : null}
           {visibleAccounts.map((account) => (

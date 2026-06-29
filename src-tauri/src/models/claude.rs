@@ -143,6 +143,13 @@ pub struct ClaudeApiKeyInput {
     pub display_name: String,
     pub api_key: String,
     pub api_base_url: String,
+    pub auth_scheme: String,
+    pub connection_mode: String,
+    pub desktop_gateway_models: Vec<String>,
+    #[serde(default)]
+    pub desktop_gateway_upstream_models: Option<Vec<String>>,
+    #[serde(default)]
+    pub desktop_gateway_model_mappings: Option<Vec<ClaudeDesktopGatewayModelMapping>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

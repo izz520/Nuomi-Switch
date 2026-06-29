@@ -78,6 +78,11 @@ export interface ClaudeApiKeyInput {
   displayName: string;
   apiKey: string;
   apiBaseUrl: string;
+  authScheme: string;
+  connectionMode: ClaudeDesktopGatewayConnectionMode;
+  desktopGatewayModels: string[];
+  desktopGatewayUpstreamModels?: string[] | null;
+  desktopGatewayModelMappings?: ClaudeDesktopGatewayModelMapping[] | null;
 }
 
 export interface ClaudeOauthPrepareResult {
