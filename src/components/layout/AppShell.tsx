@@ -6,7 +6,6 @@ import {
   MessagesSquare,
   Settings,
   Sun,
-  Users,
 } from 'lucide-react';
 import { type PointerEvent, type ReactNode } from 'react';
 import { startWindowDragging } from '../../services/windowService';
@@ -20,10 +19,10 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const PAGE_META: Record<Page, { title: string; icon: LucideIcon }> = {
-  accounts: { title: '账号管理', icon: Users },
+const PAGE_META: Record<Page, { title: string; icon?: LucideIcon; iconSrc?: string }> = {
+  accounts: { title: '账号管理', iconSrc: '/chatgpt-icon.svg' },
   sessions: { title: '会话管理', icon: MessagesSquare },
-  claude: { title: 'Claude Code', icon: MessagesSquare },
+  claude: { title: 'Claude Code', iconSrc: '/claude-icon.svg' },
   settings: { title: '设置', icon: Settings },
   logs: { title: '日志', icon: FileText },
 };
@@ -70,7 +69,8 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
   };
 
   const isAccountsArea = page === 'accounts' || page === 'sessions';
-  const TitleIcon = PAGE_META[page].icon;
+  const pageMeta = PAGE_META[page];
+  const TitleIcon = pageMeta.icon;
 
   return (
     <div className="app-shell">
@@ -127,10 +127,10 @@ export function AppShell({ page, setPage, children }: AppShellProps) {
         <header className="topbar" data-tauri-drag-region onPointerDown={handleTopbarPointerDown}>
           <div className="topbar-content">
             <div className="topbar-title-group">
-              <span className="topbar-title-icon" aria-hidden="true">
-                <TitleIcon size={16} />
+              <span className={`topbar-title-icon ${pageMeta.iconSrc ? 'image-only' : ''}`} aria-hidden="true">
+                {pageMeta.iconSrc ? <img src={pageMeta.iconSrc} alt="" /> : TitleIcon ? <TitleIcon size={16} /> : null}
               </span>
-              <h1 className="page-title">{PAGE_META[page].title}</h1>
+              <h1 className="page-title">{pageMeta.title}</h1>
             </div>
             <div className="topbar-actions" onPointerDown={stopDrag}>
               <ThemeToggle />

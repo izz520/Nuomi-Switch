@@ -201,6 +201,18 @@
   color: var(--color-primary-active);
 }
 
+.topbar-title-icon.image-only {
+  background: transparent;
+}
+
+.topbar-title-icon > img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  object-fit: cover;
+  display: block;
+}
+
 .page-title {
   margin: 0;
   font-size: 16px;
