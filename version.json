@@ -1,6 +1,6 @@
 {
     "version": "0.2.4",
-    "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases/tag/v0.2.4",
+    "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases",
     "notes": "更新Codex支持Personal Access Token账号登录和切换",
     "publishedAt": "2026-06-30"
 }
