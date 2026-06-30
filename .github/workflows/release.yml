@@ -60,36 +60,43 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate Tauri updater signing key
+        shell: bash
         env:
           UPDATER_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
-          python3 - <<'PY'
-          import base64
-          import os
-          import sys
+          node <<'JS'
+          const fs = require('node:fs');
 
-          key = os.environ.get("UPDATER_PRIVATE_KEY", "").strip()
-          if not key:
-              print("::error::Missing GitHub Secret: TAURI_SIGNING_PRIVATE_KEY")
-              sys.exit(1)
+          const key = (process.env.UPDATER_PRIVATE_KEY || '').trim();
+          if (!key) {
+            console.error('::error::Missing GitHub Secret: TAURI_SIGNING_PRIVATE_KEY');
+            process.exit(1);
+          }
 
-          try:
-              decoded = base64.b64decode(key, validate=True).decode("utf-8")
-          except Exception:
-              print("::error::TAURI_SIGNING_PRIVATE_KEY must be the exact one-line content of .tauri-signing/nuomi-switch.key.")
-              sys.exit(1)
+          if (!/^[A-Za-z0-9+/]+={0,2}$/.test(key) || key.length % 4 !== 0) {
+            console.error('::error::TAURI_SIGNING_PRIVATE_KEY must be the exact one-line content of .tauri-signing/nuomi-switch.key.');
+            process.exit(1);
+          }
 
-          first_line = decoded.splitlines()[0] if decoded.splitlines() else ""
-          if "public key" in first_line:
-              print("::error::TAURI_SIGNING_PRIVATE_KEY contains the public .key.pub value. Use .tauri-signing/nuomi-switch.key instead.")
-              sys.exit(1)
-          if "secret key" not in first_line:
-              print("::error::TAURI_SIGNING_PRIVATE_KEY is not a valid Tauri updater secret key.")
-              sys.exit(1)
+          const decoded = Buffer.from(key, 'base64').toString('utf8');
+          const encodedAgain = Buffer.from(decoded, 'utf8').toString('base64');
+          if (encodedAgain.replace(/=+$/, '') !== key.replace(/=+$/, '')) {
+            console.error('::error::TAURI_SIGNING_PRIVATE_KEY is not valid base64 content from .tauri-signing/nuomi-switch.key.');
+            process.exit(1);
+          }
 
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
-              env_file.write(f"TAURI_SIGNING_PRIVATE_KEY={key}\n")
-          PY
+          const firstLine = decoded.split(/\r?\n/)[0] || '';
+          if (firstLine.includes('public key')) {
+            console.error('::error::TAURI_SIGNING_PRIVATE_KEY contains the public .key.pub value. Use .tauri-signing/nuomi-switch.key instead.');
+            process.exit(1);
+          }
+          if (!firstLine.includes('secret key')) {
+            console.error('::error::TAURI_SIGNING_PRIVATE_KEY is not a valid Tauri updater secret key.');
+            process.exit(1);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_ENV, 'TAURI_SIGNING_PRIVATE_KEY=' + key + '\n', 'utf8');
+          JS
 
       - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v1
