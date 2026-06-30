@@ -356,7 +356,7 @@ export function AccountRow({
                 <span className="quota-line">
                   <span>
                     <CalendarDays size={16} />
-                    每周
+                    7d
                   </span>
                   <strong>{quotaUnsupported ? '可用' : formatQuotaLabel(weekly)}</strong>
                 </span>

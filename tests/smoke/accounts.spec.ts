@@ -141,7 +141,7 @@ test.describe('Accounts page smoke', () => {
 
     // The current account starts expanded, so its detail quota is visible.
     await expect(oauthRow.getByText('5h')).toBeVisible();
-    await expect(oauthRow.getByText('每周')).toBeVisible();
+    await expect(oauthRow.getByText('7d')).toBeVisible();
     await expect(oauthRow.getByText('重置机会')).toBeVisible();
     await expect(oauthRow.getByText('2 次')).toBeVisible();
     await expect(oauthRow.getByText('acct_team_nuomi_switch_smoke_long_identifier_001')).toBeVisible();
