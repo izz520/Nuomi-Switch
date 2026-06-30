@@ -32,6 +32,7 @@ export interface CodexAccountView {
   displayName: string;
   email?: string | null;
   authMode: CodexAuthMode;
+  isPatOnly: boolean;
   boundOauthAccountId?: string | null;
   accountId?: string | null;
   userId?: string | null;

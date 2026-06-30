@@ -60,6 +60,12 @@ pub struct CodexAccount {
     pub subscription_active_until: Option<String>,
     pub token_bundle: Option<TokenBundle>,
     pub api_key: Option<String>,
+    #[serde(
+        default,
+        alias = "personal_access_token",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub personal_access_token: Option<String>,
     pub api_base_url: Option<String>,
     pub quota: Option<CodexQuotaView>,
     pub quota_error: Option<AppError>,
@@ -77,6 +83,7 @@ pub struct CodexAccountView {
     pub display_name: String,
     pub email: Option<String>,
     pub auth_mode: CodexAuthMode,
+    pub is_pat_only: bool,
     pub bound_oauth_account_id: Option<String>,
     pub account_id: Option<String>,
     pub user_id: Option<String>,
@@ -115,12 +122,26 @@ pub struct SwitchResult {
 }
 
 impl CodexAccount {
+    pub fn has_personal_access_token(&self) -> bool {
+        self.personal_access_token
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .is_some()
+    }
+
+    pub fn is_pat_only(&self) -> bool {
+        self.has_personal_access_token() && self.token_bundle.is_none() && self.api_key.is_none()
+    }
+
     pub fn to_view(&self, is_current: bool) -> CodexAccountView {
+        let is_pat_only = self.is_pat_only();
         CodexAccountView {
             id: self.id.clone(),
             display_name: self.display_name.clone(),
             email: self.email.clone(),
             auth_mode: self.auth_mode.clone(),
+            is_pat_only,
             bound_oauth_account_id: self.bound_oauth_account_id.clone(),
             account_id: self.account_id.clone(),
             user_id: self.user_id.clone(),
@@ -128,18 +149,30 @@ impl CodexAccount {
             subscription_active_until: self.subscription_active_until.clone(),
             api_key: self.api_key.clone(),
             api_base_url: self.api_base_url.clone(),
-            quota: self.quota.clone(),
-            quota_error: self.quota_error.clone(),
+            quota: if is_pat_only {
+                None
+            } else {
+                self.quota.clone()
+            },
+            quota_error: if is_pat_only {
+                None
+            } else {
+                self.quota_error.clone()
+            },
             tags: self.tags.clone(),
             note: self.note.clone(),
             created_at: self.created_at,
             updated_at: self.updated_at,
             last_used_at: self.last_used_at,
             is_current,
-            capability_warning: match self.auth_mode {
-                CodexAuthMode::OAuth => None,
-                CodexAuthMode::ApiKey => {
-                    Some("API Key accounts may not support Codex quota checks.".to_string())
+            capability_warning: if is_pat_only {
+                Some("Personal Access Token accounts do not support quota checks.".to_string())
+            } else {
+                match self.auth_mode {
+                    CodexAuthMode::OAuth => None,
+                    CodexAuthMode::ApiKey => {
+                        Some("API Key accounts may not support Codex quota checks.".to_string())
+                    }
                 }
             },
         }

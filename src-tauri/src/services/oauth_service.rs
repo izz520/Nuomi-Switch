@@ -754,6 +754,7 @@ pub async fn complete_login(login_id: String) -> AppResult<CodexAccountView> {
     let auth = CodexAuthFile {
         auth_mode: Some("oauth".to_string()),
         openai_api_key: None,
+        personal_access_token: None,
         base_url: None,
         tokens: Some(CodexAuthTokens {
             id_token: token.id_token,

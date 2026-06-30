@@ -19,6 +19,13 @@ pub struct CodexAuthFile {
     pub openai_api_key: Option<serde_json::Value>,
     #[serde(
         default,
+        alias = "personalAccessToken",
+        alias = "PERSONAL_ACCESS_TOKEN",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub personal_access_token: Option<String>,
+    #[serde(
+        default,
         alias = "api_base_url",
         alias = "apiBaseUrl",
         alias = "baseUrl",

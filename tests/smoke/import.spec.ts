@@ -7,6 +7,7 @@ async function installImportMock(page: Page): Promise<void> {
       displayName: 'Smoke API Key',
       email: null,
       authMode: 'api_key',
+      isPatOnly: false,
       accountId: null,
       userId: null,
       planType: null,

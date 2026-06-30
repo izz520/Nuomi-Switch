@@ -189,7 +189,7 @@ export function ImportDrawer() {
       closeDrawer();
     }
     for (const account of accounts) {
-      if (isOAuthAuthMode(account.authMode)) {
+      if (isOAuthAuthMode(account.authMode) && !account.isPatOnly) {
         void refreshAccountQuota(account.id);
       }
     }

@@ -79,6 +79,14 @@ struct PreparedSwitchAuth {
 }
 
 async fn prepare_switch_auth(account: &CodexAccount) -> AppResult<PreparedSwitchAuth> {
+    if account.has_personal_access_token() {
+        return Ok(PreparedSwitchAuth {
+            auth_file: auth_file_service::auth_file_from_account(account)?,
+            uses_oauth_auth: false,
+            warnings: Vec::new(),
+        });
+    }
+
     if account.auth_mode == CodexAuthMode::OAuth {
         let refreshed = oauth_service::refresh_account_if_needed(account, false).await?;
         return Ok(PreparedSwitchAuth {
@@ -102,7 +110,10 @@ async fn prepare_switch_auth(account: &CodexAccount) -> AppResult<PreparedSwitch
     };
 
     match account_service::get_account(bound_oauth_account_id) {
-        Ok(bound_account) if bound_account.auth_mode == CodexAuthMode::OAuth => {
+        Ok(bound_account)
+            if bound_account.auth_mode == CodexAuthMode::OAuth
+                && !bound_account.is_pat_only() =>
+        {
             match oauth_service::refresh_account_if_needed(&bound_account, false).await {
                 Ok(refreshed) => Ok(PreparedSwitchAuth {
                     auth_file: auth_file_service::auth_file_from_account(&refreshed)?,
@@ -368,6 +379,48 @@ mod tests {
 
         assert_eq!(error.code, "CODEX_ACCOUNT_MISSING_CREDENTIALS");
         assert!(!auth_path.exists());
+    }
+
+    #[tokio::test]
+    async fn switch_personal_access_token_account_writes_pat_only_auth_file() {
+        let _env = TestEnv::new("switch-personal-access-token");
+        let account = auth_file_service::accounts_from_auth_json(
+            &serde_json::json!({
+                "OPENAI_API_KEY": null,
+                "personal_access_token": "at-fixture-personal-access-token"
+            })
+            .to_string(),
+        )
+        .expect("PAT-only auth should import")
+        .remove(0);
+        let account_id = account.id.clone();
+        save_single_account(account);
+        let auth_path = paths::default_codex_auth_file().expect("auth path should resolve");
+
+        let result = switch_account_with_writer(account_id.clone(), atomic_write::write_atomic)
+            .await
+            .expect("PAT switch should succeed without OAuth token bundle");
+        let written_json = serde_json::from_str::<serde_json::Value>(
+            &std::fs::read_to_string(&auth_path).expect("written auth should be readable"),
+        )
+        .expect("written auth should parse");
+
+        assert_eq!(result.account.id, account_id);
+        assert!(result.account.is_current);
+        assert!(result.account.is_pat_only);
+        assert_eq!(written_json.as_object().map(|object| object.len()), Some(2));
+        assert!(written_json
+            .get("OPENAI_API_KEY")
+            .map(|value| value.is_null())
+            .unwrap_or(false));
+        assert_eq!(
+            written_json
+                .get("personal_access_token")
+                .and_then(|value| value.as_str()),
+            Some("at-fixture-personal-access-token")
+        );
+        assert!(written_json.get("tokens").is_none());
+        assert!(written_json.get("last_refresh").is_none());
     }
 
     #[tokio::test]

@@ -91,6 +91,12 @@ fn auth_from_portable_value(value: &serde_json::Value) -> Option<CodexAuthFile> 
     Some(CodexAuthFile {
         auth_mode: Some("oauth".to_string()),
         openai_api_key: None,
+        personal_access_token: read_string_path(value, &["personal_access_token"])
+            .or_else(|| read_string_path(value, &["personalAccessToken"]))
+            .or_else(|| read_string_path(value, &["PERSONAL_ACCESS_TOKEN"]))
+            .or_else(|| read_string_path(value, &["credentials", "personal_access_token"]))
+            .or_else(|| read_string_path(value, &["credentials", "personalAccessToken"]))
+            .or_else(|| read_string_path(value, &["credentials", "PERSONAL_ACCESS_TOKEN"])),
         base_url: read_string_path(value, &["api_base_url"])
             .or_else(|| read_string_path(value, &["apiBaseUrl"]))
             .or_else(|| read_string_path(value, &["base_url"]))
@@ -116,7 +122,13 @@ fn auth_from_portable_value(value: &serde_json::Value) -> Option<CodexAuthFile> 
 
 fn account_from_import_value(value: &serde_json::Value) -> AppResult<Option<CodexAccount>> {
     let auth = match parse_auth_value(value) {
-        Ok(auth) if auth.tokens.is_some() || auth.openai_api_key.is_some() => Some(auth),
+        Ok(auth)
+            if auth.tokens.is_some()
+                || auth.openai_api_key.is_some()
+                || auth.personal_access_token.is_some() =>
+        {
+            Some(auth)
+        }
         _ => auth_from_portable_value(value),
     };
     let Some(auth) = auth else {
@@ -198,6 +210,7 @@ pub fn accounts_from_auth_json(content: &str) -> AppResult<Vec<CodexAccount>> {
 }
 
 pub fn account_from_auth(auth: CodexAuthFile) -> AppResult<CodexAccount> {
+    let personal_access_token = trim_optional_ref(auth.personal_access_token.as_deref());
     if let Some(api_key_value) = auth
         .openai_api_key
         .as_ref()
@@ -205,7 +218,20 @@ pub fn account_from_auth(auth: CodexAuthFile) -> AppResult<CodexAccount> {
     {
         let api_key = api_key_value.trim();
         if !api_key.is_empty() {
-            return Ok(api_key_account(api_key.to_string(), auth.base_url));
+            return Ok(api_key_account(
+                api_key.to_string(),
+                auth.base_url,
+                personal_access_token,
+            ));
+        }
+    }
+
+    if auth.tokens.is_none() {
+        if let Some(personal_access_token) = personal_access_token {
+            return Ok(personal_access_token_account(
+                personal_access_token,
+                auth.base_url,
+            ));
         }
     }
 
@@ -278,6 +304,7 @@ pub fn account_from_auth(auth: CodexAuthFile) -> AppResult<CodexAccount> {
             refresh_token: tokens.refresh_token,
         }),
         api_key: None,
+        personal_access_token,
         api_base_url: auth.base_url,
         quota: None,
         quota_error: None,
@@ -325,6 +352,18 @@ fn account_id_from_id_token(id_token: &str) -> Option<String> {
 }
 
 pub fn auth_file_from_account(account: &CodexAccount) -> AppResult<CodexAuthFile> {
+    if let Some(personal_access_token) = trim_optional_ref(account.personal_access_token.as_deref())
+    {
+        return Ok(CodexAuthFile {
+            auth_mode: None,
+            openai_api_key: Some(serde_json::Value::Null),
+            personal_access_token: Some(personal_access_token),
+            base_url: None,
+            tokens: None,
+            last_refresh: None,
+        });
+    }
+
     match account.auth_mode {
         CodexAuthMode::OAuth => {
             let tokens = account.token_bundle.as_ref().ok_or_else(|| {
@@ -344,6 +383,7 @@ pub fn auth_file_from_account(account: &CodexAccount) -> AppResult<CodexAuthFile
                 auth_mode: None,
                 // OAuth auth files carry OPENAI_API_KEY as an explicit null.
                 openai_api_key: Some(serde_json::Value::Null),
+                personal_access_token: account.personal_access_token.clone(),
                 base_url: account.api_base_url.clone(),
                 tokens: Some(crate::models::auth::CodexAuthTokens {
                     id_token: tokens.id_token.clone(),
@@ -365,6 +405,7 @@ pub fn auth_file_from_account(account: &CodexAccount) -> AppResult<CodexAuthFile
             Ok(CodexAuthFile {
                 auth_mode: Some("apikey".to_string()),
                 openai_api_key: Some(serde_json::Value::String(api_key.clone())),
+                personal_access_token: account.personal_access_token.clone(),
                 base_url: account.api_base_url.clone(),
                 tokens: None,
                 last_refresh: Some(now_last_refresh()),
@@ -388,7 +429,11 @@ fn hex_prefix(bytes: &[u8], chars: usize) -> String {
         .to_string()
 }
 
-fn api_key_account(api_key: String, base_url: Option<String>) -> CodexAccount {
+fn api_key_account(
+    api_key: String,
+    base_url: Option<String>,
+    personal_access_token: Option<String>,
+) -> CodexAccount {
     let id = stable_id(&api_key);
     let now = now_timestamp();
     CodexAccount {
@@ -403,6 +448,37 @@ fn api_key_account(api_key: String, base_url: Option<String>) -> CodexAccount {
         subscription_active_until: None,
         token_bundle: None,
         api_key: Some(api_key),
+        personal_access_token,
+        api_base_url: base_url,
+        quota: None,
+        quota_error: None,
+        tags: Vec::new(),
+        note: None,
+        created_at: now,
+        updated_at: now,
+        last_used_at: None,
+    }
+}
+
+fn personal_access_token_account(
+    personal_access_token: String,
+    base_url: Option<String>,
+) -> CodexAccount {
+    let id = stable_id(&personal_access_token);
+    let now = now_timestamp();
+    CodexAccount {
+        id,
+        display_name: "Codex Personal Access Token".to_string(),
+        email: None,
+        auth_mode: CodexAuthMode::OAuth,
+        bound_oauth_account_id: None,
+        account_id: None,
+        user_id: None,
+        plan_type: Some("PERSONAL_ACCESS_TOKEN".to_string()),
+        subscription_active_until: None,
+        token_bundle: None,
+        api_key: None,
+        personal_access_token: Some(personal_access_token),
         api_base_url: base_url,
         quota: None,
         quota_error: None,
@@ -500,6 +576,120 @@ mod tests {
 
         assert_eq!(account.account_id.as_deref(), Some("acct_from_access"));
         assert_eq!(account.plan_type.as_deref(), Some("plus"));
+    }
+
+    #[test]
+    fn writes_personal_access_token_auth_file_without_oauth_tokens() {
+        let personal_access_token = "at-fixture-personal-access-token";
+        let auth = parse_auth_json(
+            &serde_json::json!({
+                "OPENAI_API_KEY": null,
+                "personal_access_token": personal_access_token,
+                "tokens": {
+                    "id_token": make_jwt(serde_json::json!({
+                        "email": "fixture.oauth@example.test",
+                        "https://api.openai.com/auth": {
+                            "chatgpt_user_id": "user_fixture_123",
+                            "chatgpt_account_id": "acct_fixture"
+                        }
+                    })),
+                    "access_token": make_jwt(serde_json::json!({})),
+                    "refresh_token": "refresh_fixture",
+                    "account_id": "acct_fixture"
+                }
+            })
+            .to_string(),
+        )
+        .expect("OAuth JSON should parse");
+
+        let account = account_from_auth(auth).expect("OAuth auth should project to account");
+        let exported = auth_file_from_account(&account).expect("OAuth account should export");
+        let json = serde_json::to_value(&exported).expect("auth file should serialize");
+
+        assert_eq!(
+            account.personal_access_token.as_deref(),
+            Some(personal_access_token)
+        );
+        assert_eq!(
+            json.as_object().map(|object| object.len()),
+            Some(2),
+            "PAT auth files should only contain OPENAI_API_KEY and personal_access_token"
+        );
+        assert!(json
+            .get("OPENAI_API_KEY")
+            .map(|value| value.is_null())
+            .unwrap_or(false));
+        assert_eq!(
+            json.get("personal_access_token")
+                .and_then(|value| value.as_str()),
+            Some(personal_access_token)
+        );
+        assert!(json.get("tokens").is_none());
+        assert!(json.get("last_refresh").is_none());
+        assert!(json.get("base_url").is_none());
+        assert!(json.get("auth_mode").is_none());
+        assert!(json.get("personalAccessToken").is_none());
+    }
+
+    #[test]
+    fn imports_personal_access_token_only_auth_file() {
+        let personal_access_token = "at-fixture-personal-access-token";
+        let accounts = accounts_from_auth_json(
+            &serde_json::json!({
+                "OPENAI_API_KEY": null,
+                "personal_access_token": personal_access_token
+            })
+            .to_string(),
+        )
+        .expect("PAT-only auth JSON should import");
+
+        assert_eq!(accounts.len(), 1);
+        assert_eq!(
+            accounts[0].personal_access_token.as_deref(),
+            Some(personal_access_token)
+        );
+        assert!(accounts[0].token_bundle.is_none());
+        assert_eq!(
+            accounts[0].plan_type.as_deref(),
+            Some("PERSONAL_ACCESS_TOKEN")
+        );
+    }
+
+    #[test]
+    fn oauth_with_personal_access_token_is_not_pat_only() {
+        let personal_access_token = "at-fixture-personal-access-token";
+        let auth = parse_auth_json(
+            &serde_json::json!({
+                "OPENAI_API_KEY": null,
+                "personal_access_token": personal_access_token,
+                "tokens": {
+                    "id_token": make_jwt(serde_json::json!({
+                        "email": "fixture.oauth@example.test",
+                        "https://api.openai.com/auth": {
+                            "chatgpt_user_id": "user_fixture_123",
+                            "chatgpt_account_id": "acct_fixture",
+                            "chatgpt_plan_type": "team"
+                        }
+                    })),
+                    "access_token": make_jwt(serde_json::json!({})),
+                    "refresh_token": "refresh_fixture",
+                    "account_id": "acct_fixture"
+                }
+            })
+            .to_string(),
+        )
+        .expect("OAuth JSON should parse");
+
+        let account = account_from_auth(auth).expect("OAuth auth should project to account");
+
+        assert!(account.has_personal_access_token());
+        assert!(!account.is_pat_only());
+        assert!(account.token_bundle.is_some());
+        assert_eq!(account.plan_type.as_deref(), Some("team"));
+        assert_eq!(
+            account.to_view(false).capability_warning.as_deref(),
+            None
+        );
     }
 
     #[test]

@@ -13,6 +13,13 @@ function accountSubtitle(account: CodexAccountView): string {
   return account.email ?? account.accountId ?? account.id;
 }
 
+function accountKind(account: CodexAccountView): string {
+  if (account.isPatOnly) {
+    return 'PAT';
+  }
+  return account.authMode === 'api_key' ? 'API Key' : 'OAuth';
+}
+
 export function ConfirmSwitchModal({ account, switching, onCancel, onConfirm }: ConfirmSwitchModalProps) {
   if (!account) {
     return null;
@@ -27,7 +34,7 @@ export function ConfirmSwitchModal({ account, switching, onCancel, onConfirm }: 
         </header>
 
         <div className="switch-modal-account">
-          <span>{account.authMode === 'api_key' ? 'API Key' : 'OAuth'}</span>
+          <span>{accountKind(account)}</span>
           <strong title={account.displayName}>{account.displayName}</strong>
           <code title={accountSubtitle(account)}>{accountSubtitle(account)}</code>
         </div>

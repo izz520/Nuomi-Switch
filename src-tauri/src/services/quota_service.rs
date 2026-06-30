@@ -937,6 +937,17 @@ pub async fn refresh_quota(account_id: String) -> AppResult<CodexAccountView> {
             )
         })?;
     let mut account = file.accounts[account_index].clone();
+    if account.is_pat_only() {
+        account.quota = None;
+        account.quota_error = None;
+        account.updated_at = now_timestamp();
+        file.accounts[account_index] = account;
+        let updated_account = file.accounts[account_index].to_view(
+            file.current_account_id.as_deref() == Some(file.accounts[account_index].id.as_str()),
+        );
+        storage::save_accounts_file(file)?;
+        return Ok(updated_account);
+    }
 
     match fetch_quota(&account).await {
         Ok((mut quota, plan_type)) => {
@@ -974,6 +985,7 @@ pub async fn refresh_all_quotas() -> AppResult<Vec<CodexAccountView>> {
         .accounts
         .into_iter()
         .filter(|account| account.auth_mode == CodexAuthMode::OAuth)
+        .filter(|account| !account.is_pat_only())
         .map(|account| account.id)
         .collect::<Vec<_>>();
 
@@ -1112,6 +1124,7 @@ mod tests {
             subscription_active_until: None,
             token_bundle: None,
             api_key: None,
+            personal_access_token: None,
             api_base_url: None,
             quota: Some(CodexQuotaView {
                 hourly_remaining_percent: Some(42),

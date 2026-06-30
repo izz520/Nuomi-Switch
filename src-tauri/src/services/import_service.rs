@@ -255,7 +255,9 @@ pub fn start_batch_import_from_files(
                     } else {
                         None
                     };
-                    let quota_warning = if check_quota && account.auth_mode == CodexAuthMode::OAuth
+                    let quota_warning = if check_quota
+                        && account.auth_mode == CodexAuthMode::OAuth
+                        && !account.is_pat_only()
                     {
                         Some(
                             "Quota check is deferred until after import in this version."
@@ -392,6 +394,7 @@ pub fn add_with_token(
     let auth = crate::models::auth::CodexAuthFile {
         auth_mode: Some("oauth".to_string()),
         openai_api_key: None,
+        personal_access_token: None,
         base_url: None,
         tokens: Some(crate::models::auth::CodexAuthTokens {
             id_token,
@@ -432,6 +435,7 @@ pub fn add_with_api_key(
         subscription_active_until: None,
         token_bundle: None,
         api_key: Some(trimmed.to_string()),
+        personal_access_token: None,
         api_base_url,
         quota: None,
         quota_error: None,

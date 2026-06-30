@@ -58,6 +58,7 @@ function createMockResetCreditAccount(count: number): CodexAccountView {
     displayName: '1547471276@qq.com',
     email: '1547471276@qq.com',
     authMode: 'oauth',
+    isPatOnly: false,
     accountId: '39e543ed-4ffc-4649-8bff-cdf63559b4f8',
     planType: 'team',
     subscriptionActiveUntil: '2026-07-12T16:50:02+08:00',
@@ -125,7 +126,7 @@ export function CodexAccountsPage({ onOpenSessions }: CodexAccountsPageProps) {
   }, [loadAccounts, loadSessions]);
 
   const oauthAccountCount = useMemo(
-    () => previewAccounts.filter((account) => isOAuthAuthMode(account.authMode)).length,
+    () => previewAccounts.filter((account) => isOAuthAuthMode(account.authMode) && !account.isPatOnly).length,
     [previewAccounts],
   );
   const apiAccountCount = useMemo(

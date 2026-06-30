@@ -4,6 +4,7 @@ pub fn redact_sensitive(input: &str) -> String {
         "access_token",
         "refresh_token",
         "id_token",
+        "personal_access_token",
         "api_key",
         "OPENAI_API_KEY",
         "authorization",
@@ -68,12 +69,13 @@ mod tests {
 
     #[test]
     fn redacts_token_fields() {
-        let input = r#"{"access_token":"access-fixture-secret","refresh_token":"refresh-fixture-secret","id_token":"id-fixture-secret"}"#;
+        let input = r#"{"access_token":"access-fixture-secret","refresh_token":"refresh-fixture-secret","id_token":"id-fixture-secret","personal_access_token":"pat-fixture-secret"}"#;
         let output = redact_sensitive(input);
 
         assert!(!output.contains("access-fixture-secret"));
         assert!(!output.contains("refresh-fixture-secret"));
         assert!(!output.contains("id-fixture-secret"));
+        assert!(!output.contains("pat-fixture-secret"));
         assert!(output.contains("\"access_token\":\"*********************\""));
     }
 

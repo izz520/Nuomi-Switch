@@ -363,6 +363,7 @@ mod tests {
             subscription_active_until: None,
             token_bundle: None,
             api_key: Some("sk-test".to_string()),
+            personal_access_token: None,
             api_base_url: Some("https://api.yaso11.tech".to_string()),
             quota: None,
             quota_error: None,

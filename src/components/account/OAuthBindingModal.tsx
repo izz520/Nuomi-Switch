@@ -24,7 +24,7 @@ export function OAuthBindingModal({
   onSave,
 }: OAuthBindingModalProps) {
   const oauthAccounts = useMemo(
-    () => accounts.filter((account) => isOAuthAuthMode(account.authMode)),
+    () => accounts.filter((account) => isOAuthAuthMode(account.authMode) && !account.isPatOnly),
     [accounts],
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);

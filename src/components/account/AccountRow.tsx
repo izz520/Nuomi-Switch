@@ -124,7 +124,7 @@ function getPlanTone(planType?: string | null): string {
 }
 
 function canReauthenticateAccount(account: CodexAccountView): boolean {
-  return isOAuthAuthMode(account.authMode) && account.quotaError !== null && account.quotaError !== undefined;
+  return isOAuthAuthMode(account.authMode) && !account.isPatOnly && account.quotaError !== null && account.quotaError !== undefined;
 }
 
 function getQuotaErrorSummary(error: AppError): { title: string; action: string } {
@@ -215,15 +215,16 @@ export function AccountRow({
 }: AccountRowProps) {
   const [copiedField, setCopiedField] = useState<'apiKey' | 'apiBaseUrl' | null>(null);
   const [showResetCreditsModal, setShowResetCreditsModal] = useState(false);
-  const quotaUnsupported = account.authMode === 'api_key';
-  const planText = quotaUnsupported ? 'API' : account.planType ?? '免费';
+  const isPersonalAccessToken = account.isPatOnly;
+  const quotaUnsupported = account.authMode === 'api_key' || isPersonalAccessToken;
+  const planText = isPersonalAccessToken ? 'PAT' : quotaUnsupported ? 'API' : account.planType ?? '免费';
   const hourly = account.quota?.hourlyRemainingPercent;
   const weekly = account.quota?.weeklyRemainingPercent;
   const normalizedHourly = typeof hourly === 'number' ? Math.max(0, Math.min(100, hourly)) : 0;
   const normalizedWeekly = typeof weekly === 'number' ? Math.max(0, Math.min(100, weekly)) : 0;
   const planTone = quotaUnsupported ? 'api' : getPlanTone(account.planType);
   const canReauthenticate = canReauthenticateAccount(account);
-  const hasQuotaError = account.quotaError !== null && account.quotaError !== undefined;
+  const hasQuotaError = !isPersonalAccessToken && account.quotaError !== null && account.quotaError !== undefined;
   const quotaErrorSummary = account.quotaError ? getQuotaErrorSummary(account.quotaError) : null;
   const expiresAt = account.subscriptionActiveUntil ?? null;
   const validityDays = formatRemainingDays(expiresAt);
@@ -264,7 +265,7 @@ export function AccountRow({
               <div className="api-account-field">
                 <span className="api-account-field-label">
                   <KeyRound size={14} />
-                  API Key
+                  {isPersonalAccessToken ? 'Personal Access Token' : 'API Key'}
                 </span>
                 <span className="api-account-field-actions">
                   <button type="button" aria-label="显示 API Key" disabled>
@@ -275,43 +276,54 @@ export function AccountRow({
                     aria-label={copiedField === 'apiKey' ? 'API Key 已复制' : '复制 API Key'}
                     className={copiedField === 'apiKey' ? 'copied' : ''}
                     title={copiedField === 'apiKey' ? '复制成功' : '复制 API Key'}
-                    disabled={!account.apiKey}
+                    disabled={isPersonalAccessToken || !account.apiKey}
                     onClick={() => void copyField('apiKey', getCopyableApiKey(account))}
                   >
                     {copiedField === 'apiKey' ? <Check size={13} /> : <Copy size={13} />}
                   </button>
                 </span>
-                <code>{getMaskedApiKey()}</code>
+                <code>{isPersonalAccessToken ? 'at-********************' : getMaskedApiKey()}</code>
               </div>
-              <div className="api-account-field">
-                <span className="api-account-field-label">
-                  <Link size={14} />
-                  基础地址
-                </span>
-                <span className="api-account-field-actions">
-                  <button
-                    type="button"
-                    aria-label={copiedField === 'apiBaseUrl' ? 'API 基础地址已复制' : '复制 API 基础地址'}
-                    className={copiedField === 'apiBaseUrl' ? 'copied' : ''}
-                    title={copiedField === 'apiBaseUrl' ? '复制成功' : '复制基础地址'}
-                    onClick={() => void copyField('apiBaseUrl', getApiBaseUrl(account))}
-                  >
-                    {copiedField === 'apiBaseUrl' ? <Check size={13} /> : <Copy size={13} />}
-                  </button>
-                </span>
-                <code>{getApiBaseUrl(account)}</code>
-              </div>
+              {!isPersonalAccessToken ? (
+                <div className="api-account-field">
+                  <span className="api-account-field-label">
+                    <Link size={14} />
+                    基础地址
+                  </span>
+                  <span className="api-account-field-actions">
+                    <button
+                      type="button"
+                      aria-label={copiedField === 'apiBaseUrl' ? 'API 基础地址已复制' : '复制 API 基础地址'}
+                      className={copiedField === 'apiBaseUrl' ? 'copied' : ''}
+                      title={copiedField === 'apiBaseUrl' ? '复制成功' : '复制基础地址'}
+                      onClick={() => void copyField('apiBaseUrl', getApiBaseUrl(account))}
+                    >
+                      {copiedField === 'apiBaseUrl' ? <Check size={13} /> : <Copy size={13} />}
+                    </button>
+                  </span>
+                  <code>{getApiBaseUrl(account)}</code>
+                </div>
+              ) : null}
             </div>
-            <span className="api-oauth-binding">
-              <span>
-                <ShieldCheck size={14} />
-                OAuth {boundOAuthAccount ? '已绑定' : '未绑定'}
+            {isPersonalAccessToken ? (
+              <span className="api-oauth-binding">
+                <span>
+                  <ShieldCheck size={14} />
+                  可切换，不支持额度刷新
+                </span>
               </span>
-              <button type="button" onClick={() => onBindOAuthAccount(account)}>
-                <Link2 size={13} />
-                <span>{getOAuthBindingText(boundOAuthAccount)}</span>
-              </button>
-            </span>
+            ) : (
+              <span className="api-oauth-binding">
+                <span>
+                  <ShieldCheck size={14} />
+                  OAuth {boundOAuthAccount ? '已绑定' : '未绑定'}
+                </span>
+                <button type="button" onClick={() => onBindOAuthAccount(account)}>
+                  <Link2 size={13} />
+                  <span>{getOAuthBindingText(boundOAuthAccount)}</span>
+                </button>
+              </span>
+            )}
           </>
         ) : (
           <div className="account-health-slot">
@@ -406,7 +418,7 @@ export function AccountRow({
             onClick={() => onRefreshQuota(account.id)}
           />
         ) : null}
-        {quotaUnsupported ? (
+        {quotaUnsupported && !isPersonalAccessToken ? (
           <IconButton label="编辑 API 账号" icon={<Pencil size={16} />} onClick={() => onEditApiAccount(account)} />
         ) : null}
         <IconButton

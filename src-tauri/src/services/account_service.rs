@@ -104,7 +104,7 @@ fn validate_bound_oauth_account(
                 "请刷新账号列表，或重新导入该 OAuth 账号。",
             )
         })?;
-    if !matches!(oauth_account.auth_mode, CodexAuthMode::OAuth) {
+    if !matches!(oauth_account.auth_mode, CodexAuthMode::OAuth) || oauth_account.is_pat_only() {
         return Err(AppError::new(
             "CODEX_BOUND_ACCOUNT_NOT_OAUTH",
             "绑定目标必须是 OAuth 账号。",

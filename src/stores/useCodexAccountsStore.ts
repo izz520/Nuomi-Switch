@@ -130,7 +130,7 @@ export const useCodexAccountsStore = create<CodexAccountsState>((set, get) => ({
   },
   async refreshAllQuotas() {
     const oauthAccountIds = get()
-      .accounts.filter((account) => isOAuthAuthMode(account.authMode))
+      .accounts.filter((account) => isOAuthAuthMode(account.authMode) && !account.isPatOnly)
       .map((account) => account.id);
     set({ refreshingAll: true, error: null });
     try {
