@@ -1,6 +1,6 @@
 {
-    "version": "0.2.3",
-    "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases/tag/v0.2.3",
-    "notes": "更新Codex重重额度的样式,新增设置页面,新增Codex自动刷新额度",
-    "publishedAt": "2026-06-29"
+    "version": "0.2.4",
+    "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases/tag/v0.2.4",
+    "notes": "更新Codex支持Personal Access Token账号登录和切换",
+    "publishedAt": "2026-06-30"
 }
