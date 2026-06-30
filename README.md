@@ -165,7 +165,7 @@ git push origin v0.2.1
 
 - updater 公钥已写入 `src-tauri/tauri.conf.json`。
 - 本地生成的私钥位于 `.tauri-signing/nuomi-switch.key`，该目录已加入 `.gitignore`，不要提交到仓库。
-- GitHub Actions 发布前需要配置仓库 Secret：`TAURI_SIGNING_PRIVATE_KEY`。当前私钥没有密码，`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 留空即可；如果以后重新生成了带密码的私钥，再配置对应密码。
+- GitHub Actions 发布前需要配置仓库 Secret：`TAURI_SIGNING_PRIVATE_KEY`。值必须是 `.tauri-signing/nuomi-switch.key` 文件的一整行内容，可以用 `cat .tauri-signing/nuomi-switch.key` 复制；不要填 `.key.pub` 公钥内容，也不要填本地文件路径。当前私钥没有密码，`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 留空即可；如果以后重新生成了带密码的私钥，再配置对应密码。
 
 发布新版本时，请同步更新：
 

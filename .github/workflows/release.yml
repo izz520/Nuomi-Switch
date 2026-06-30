@@ -59,11 +59,42 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Tauri updater signing key
+        env:
+          UPDATER_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          import sys
+
+          key = os.environ.get("UPDATER_PRIVATE_KEY", "").strip()
+          if not key:
+              print("::error::Missing GitHub Secret: TAURI_SIGNING_PRIVATE_KEY")
+              sys.exit(1)
+
+          try:
+              decoded = base64.b64decode(key, validate=True).decode("utf-8")
+          except Exception:
+              print("::error::TAURI_SIGNING_PRIVATE_KEY must be the exact one-line content of .tauri-signing/nuomi-switch.key.")
+              sys.exit(1)
+
+          first_line = decoded.splitlines()[0] if decoded.splitlines() else ""
+          if "public key" in first_line:
+              print("::error::TAURI_SIGNING_PRIVATE_KEY contains the public .key.pub value. Use .tauri-signing/nuomi-switch.key instead.")
+              sys.exit(1)
+          if "secret key" not in first_line:
+              print("::error::TAURI_SIGNING_PRIVATE_KEY is not a valid Tauri updater secret key.")
+              sys.exit(1)
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"TAURI_SIGNING_PRIVATE_KEY={key}\n")
+          PY
+
       - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
