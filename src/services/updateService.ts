@@ -1,79 +1,129 @@
 import { getVersion } from '@tauri-apps/api/app';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { check, type DownloadEvent, type Update } from '@tauri-apps/plugin-updater';
 
-export type UpdateStatus = 'idle' | 'checking' | 'available' | 'current' | 'unconfigured' | 'error';
+export type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'current'
+  | 'unconfigured'
+  | 'downloading'
+  | 'installing'
+  | 'installed'
+  | 'error';
 
 export interface UpdateInfo {
   version: string;
-  releaseUrl: string;
+  currentVersion: string;
   notes?: string;
   publishedAt?: string;
 }
 
-interface UpdateManifest {
-  version?: unknown;
-  releaseUrl?: unknown;
-  notes?: unknown;
-  publishedAt?: unknown;
+export interface UpdateProgress {
+  downloadedBytes: number;
+  totalBytes: number | null;
+  percent: number | null;
+  finished: boolean;
 }
 
-const manifestUrl = import.meta.env.VITE_UPDATE_MANIFEST_URL as string | undefined;
+let pendingUpdate: Update | null = null;
 
-export function getUpdateManifestUrl(): string | null {
-  return manifestUrl?.trim() || null;
+export function canUseNativeUpdater(): boolean {
+  if (!import.meta.env.DEV) {
+    return true;
+  }
+
+  return new URLSearchParams(window.location.search).get('useNativeUpdater') === '1';
 }
 
 export function getAppVersion(): Promise<string> {
   return getVersion();
 }
 
-export async function checkForUpdate(currentVersion: string): Promise<UpdateInfo | null> {
-  const url = getUpdateManifestUrl();
-  if (!url) {
+export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  if (!canUseNativeUpdater()) {
     return null;
   }
 
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) {
-    throw new Error(`更新清单请求失败：HTTP ${response.status}`);
+  if (pendingUpdate) {
+    await pendingUpdate.close().catch(() => undefined);
+    pendingUpdate = null;
   }
 
-  const manifest = (await response.json()) as UpdateManifest;
-  if (typeof manifest.version !== 'string' || typeof manifest.releaseUrl !== 'string') {
-    throw new Error('更新清单格式无效。');
-  }
-
-  if (compareVersions(manifest.version, currentVersion) <= 0) {
+  const update = await check();
+  if (!update) {
     return null;
   }
 
+  pendingUpdate = update;
+  return normalizeUpdateInfo(update);
+}
+
+export async function downloadAndInstallUpdate(onProgress: (progress: UpdateProgress) => void): Promise<void> {
+  let update = pendingUpdate;
+  if (!update) {
+    update = await check();
+    if (!update) {
+      throw new Error('当前没有可安装的更新。');
+    }
+    pendingUpdate = update;
+  }
+
+  let downloadedBytes = 0;
+  let totalBytes: number | null = null;
+
+  await update.downloadAndInstall((event) => {
+    const progress = reduceDownloadEvent(event, downloadedBytes, totalBytes);
+    downloadedBytes = progress.downloadedBytes;
+    totalBytes = progress.totalBytes;
+    onProgress(progress);
+  });
+
+  await update.close().catch(() => undefined);
+  if (pendingUpdate === update) {
+    pendingUpdate = null;
+  }
+}
+
+export function relaunchApp(): Promise<void> {
+  return relaunch();
+}
+
+function normalizeUpdateInfo(update: Update): UpdateInfo {
   return {
-    version: manifest.version,
-    releaseUrl: manifest.releaseUrl,
-    notes: typeof manifest.notes === 'string' ? manifest.notes : undefined,
-    publishedAt: typeof manifest.publishedAt === 'string' ? manifest.publishedAt : undefined,
+    version: update.version,
+    currentVersion: update.currentVersion,
+    notes: update.body,
+    publishedAt: update.date,
   };
 }
 
-export function compareVersions(nextVersion: string, currentVersion: string): number {
-  const next = normalizeVersion(nextVersion);
-  const current = normalizeVersion(currentVersion);
-  const length = Math.max(next.length, current.length);
-
-  for (let index = 0; index < length; index += 1) {
-    const left = next[index] ?? 0;
-    const right = current[index] ?? 0;
-    if (left > right) return 1;
-    if (left < right) return -1;
+function reduceDownloadEvent(
+  event: DownloadEvent,
+  downloadedBytes: number,
+  totalBytes: number | null,
+): UpdateProgress {
+  if (event.event === 'Started') {
+    const nextTotalBytes = event.data.contentLength ?? null;
+    return progressState(0, nextTotalBytes, false);
   }
 
-  return 0;
+  if (event.event === 'Progress') {
+    return progressState(downloadedBytes + event.data.chunkLength, totalBytes, false);
+  }
+
+  return progressState(totalBytes ?? downloadedBytes, totalBytes, true);
 }
 
-function normalizeVersion(version: string): number[] {
-  return version
-    .trim()
-    .replace(/^v/i, '')
-    .split(/[.-]/)
-    .map((part) => Number.parseInt(part, 10))
-    .map((part) => (Number.isFinite(part) ? part : 0));
+function progressState(downloadedBytes: number, totalBytes: number | null, finished: boolean): UpdateProgress {
+  const percent =
+    totalBytes && totalBytes > 0 ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)) : null;
+
+  return {
+    downloadedBytes,
+    totalBytes,
+    percent: finished && percent === null ? 100 : percent,
+    finished,
+  };
 }

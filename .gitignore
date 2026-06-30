@@ -36,6 +36,7 @@ docs/platform-integration-guide.md
 docs/plugin-architecture-design.md
 
 # Runtime caches
+.tauri-signing/
 src-tauri/arms_cache/
 arms.biz.trace.*
 sidecars/cockpit-cliproxy/bin/

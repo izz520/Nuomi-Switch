@@ -10,9 +10,15 @@ mod test_support;
 pub fn run() {
     infra::logger::init_logger();
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init());
+
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    builder
         .setup(|app| {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {

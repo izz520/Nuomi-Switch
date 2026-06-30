@@ -145,30 +145,37 @@ git tag v0.2.1
 git push origin v0.2.1
 ```
 
-## 更新检查
+## 在线更新
 
-应用设置页会读取远端版本清单来判断是否有新版本。当前清单地址通过生产环境变量配置：
+新版本已接入 Tauri 官方 updater。应用会读取 GitHub Release 中由构建流程生成的 `latest.json`，校验更新包签名后在应用内下载、安装，并自动重启生效。
 
-```env
-VITE_UPDATE_MANIFEST_URL=https://raw.githubusercontent.com/izz520/Nuomi-Switch/main/version.json
-```
-
-`version.json` 示例：
+更新端点配置在 `src-tauri/tauri.conf.json`：
 
 ```json
 {
-  "version": "0.2.1",
-  "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases/tag/v0.2.1",
-  "notes": "首个公开版本。",
-  "publishedAt": "2026-06-29"
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/izz520/Nuomi-Switch/releases/latest/download/latest.json"]
+    }
+  }
 }
 ```
+
+签名密钥说明：
+
+- updater 公钥已写入 `src-tauri/tauri.conf.json`。
+- 本地生成的私钥位于 `.tauri-signing/nuomi-switch.key`，该目录已加入 `.gitignore`，不要提交到仓库。
+- GitHub Actions 发布前需要配置仓库 Secret：`TAURI_SIGNING_PRIVATE_KEY`。当前私钥没有密码，`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 留空即可；如果以后重新生成了带密码的私钥，再配置对应密码。
 
 发布新版本时，请同步更新：
 
 - `package.json` 的 `version`
 - `src-tauri/tauri.conf.json` 的 `version`
-- `version.json` 的 `version` 和 `releaseUrl`
+- 如需兼容旧版本客户端，再同步更新 `version.json` 的 `version` 和 `releaseUrl`
+
+发布流程会创建 GitHub Draft Release，并上传安装包、签名文件和 updater 用的 `latest.json`。确认无误后发布该 draft，线上客户端才能检测到并安装更新。
+
+`version.json` 仅保留给旧版本客户端使用；新版本客户端不再依赖 `VITE_UPDATE_MANIFEST_URL` 做更新判断。
 
 ## 验证
 
@@ -209,7 +216,7 @@ cargo test
 - 额度刷新仍需要更多真实账号环境验证。
 - 批量导入预览支持选择后确认，但预览阶段的额度检查尚未完整实现。
 - 暂未接入系统密钥存储；当前阶段凭据保存在本地应用数据 JSON 中。
-- 自动更新暂未接入安装器级别的增量更新；当前采用“检查新版并跳转 GitHub Release 下载”的方式。
+- 在线更新使用 Tauri 签名安装包，安装后需要重启应用生效；不做远程 JS/CSS 热替换。
 - Linux 支持仍需要更多发行版环境验证。
 
 ## 贡献

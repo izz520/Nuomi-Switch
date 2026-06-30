@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 import {
+  canUseNativeUpdater,
   checkForUpdate,
+  downloadAndInstallUpdate,
   getAppVersion,
-  getUpdateManifestUrl,
+  relaunchApp,
   type UpdateInfo,
+  type UpdateProgress,
   type UpdateStatus,
 } from '../services/updateService';
 
@@ -11,19 +14,24 @@ interface UpdateState {
   appVersion: string;
   updateStatus: UpdateStatus;
   updateInfo: UpdateInfo | null;
+  updateProgress: UpdateProgress | null;
   updateError: string | null;
   startupChecked: boolean;
   updateModalDismissed: boolean;
   loadAppVersion: () => Promise<string>;
   checkUpdate: () => Promise<void>;
   checkStartupUpdate: () => Promise<void>;
+  installUpdateAndRestart: () => Promise<void>;
   dismissUpdateModal: () => void;
 }
+
+const busyStatuses: UpdateStatus[] = ['checking', 'downloading', 'installing', 'installed'];
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
   appVersion: '...',
   updateStatus: 'idle',
   updateInfo: null,
+  updateProgress: null,
   updateError: null,
   startupChecked: false,
   updateModalDismissed: false,
@@ -43,28 +51,30 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     }
   },
   async checkUpdate() {
-    const manifestUrl = getUpdateManifestUrl();
-    if (!manifestUrl) {
+    if (!canUseNativeUpdater()) {
       set({
         updateStatus: 'unconfigured',
         updateInfo: null,
+        updateProgress: null,
         updateError: null,
       });
       return;
     }
 
-    set({ updateStatus: 'checking', updateInfo: null, updateError: null });
+    set({ updateStatus: 'checking', updateInfo: null, updateProgress: null, updateError: null });
     try {
-      const currentVersion = await get().loadAppVersion();
-      const normalizedCurrentVersion = currentVersion === '未知' ? await getAppVersion() : currentVersion;
-      const updateInfo = await checkForUpdate(normalizedCurrentVersion);
+      await get().loadAppVersion();
+      const updateInfo = await checkForUpdate();
       set({
         updateInfo,
+        updateProgress: null,
         updateStatus: updateInfo ? 'available' : 'current',
+        updateModalDismissed: false,
       });
     } catch (error) {
       set({
         updateStatus: 'error',
+        updateProgress: null,
         updateError: error instanceof Error ? error.message : '检查更新失败。',
       });
     }
@@ -81,10 +91,11 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         updateStatus: 'available',
         updateInfo: {
           version: '0.3.0',
-          releaseUrl: 'https://github.com/izz520/Nuomi-Switch/releases',
+          currentVersion: '0.2.2',
           notes: '模拟更新：优化 Codex 额度自动刷新、设置页信息架构和启动检查体验。',
           publishedAt: new Date().toISOString(),
         },
+        updateProgress: null,
         updateError: null,
         updateModalDismissed: false,
       });
@@ -93,7 +104,49 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
     await get().checkUpdate();
   },
+  async installUpdateAndRestart() {
+    if (!get().updateInfo || busyStatuses.includes(get().updateStatus)) {
+      return;
+    }
+
+    const isMockUpdate = import.meta.env.DEV && new URLSearchParams(window.location.search).get('mockUpdate') === '1';
+    set({ updateStatus: 'downloading', updateProgress: null, updateError: null, updateModalDismissed: false });
+
+    try {
+      if (isMockUpdate) {
+        set({
+          updateProgress: {
+            downloadedBytes: 1,
+            totalBytes: 1,
+            percent: 100,
+            finished: true,
+          },
+          updateStatus: 'installed',
+        });
+        return;
+      }
+
+      await downloadAndInstallUpdate((progress) => {
+        set({
+          updateProgress: progress,
+          updateStatus: progress.finished ? 'installing' : 'downloading',
+        });
+      });
+
+      set({ updateStatus: 'installed', updateProgress: get().updateProgress });
+      await relaunchApp();
+    } catch (error) {
+      set({
+        updateStatus: 'error',
+        updateError: error instanceof Error ? error.message : '安装更新失败。',
+      });
+    }
+  },
   dismissUpdateModal() {
+    if (busyStatuses.includes(get().updateStatus)) {
+      return;
+    }
+
     set({ updateModalDismissed: true });
   },
 }));

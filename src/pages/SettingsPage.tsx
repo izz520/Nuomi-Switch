@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Panel } from '../components/ui/Panel/Panel';
 import { Tabs, type Tab } from '../components/ui/Tabs/Tabs';
@@ -42,7 +42,16 @@ export function SettingsPage() {
     saveSettings,
     detectPaths,
   } = useSettingsStore();
-  const { appVersion, updateStatus, updateInfo, updateError, loadAppVersion, checkUpdate } = useUpdateStore();
+  const {
+    appVersion,
+    updateStatus,
+    updateInfo,
+    updateProgress,
+    updateError,
+    loadAppVersion,
+    checkUpdate,
+    installUpdateAndRestart,
+  } = useUpdateStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('about');
   const [quotaSettingsDraft, setQuotaSettingsDraft] = useState<
     Pick<AppSettings, 'quotaAutoRefreshEnabled' | 'quotaAutoRefreshIntervalMinutes'> | null
@@ -124,15 +133,42 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <div className={`update-status update-status-${updateStatus}`} role="status">
+          <div className={`update-status update-status-${updateStatus}`} role="status" aria-live="polite">
             {updateStatus === 'available' && updateInfo ? (
               <>
                 <div>
                   <strong>发现新版本 v{updateInfo.version}</strong>
                   {updateInfo.notes ? <p>{updateInfo.notes}</p> : null}
                 </div>
-                <Button variant="primary" icon={<Download />} onClick={() => void openUrl(updateInfo.releaseUrl)}>
-                  获取更新
+                <Button variant="primary" icon={<Download />} onClick={() => void installUpdateAndRestart()}>
+                  安装并重启
+                </Button>
+              </>
+            ) : updateStatus === 'downloading' || updateStatus === 'installing' || updateStatus === 'installed' ? (
+              <>
+                <div className="update-status-progress">
+                  <strong>
+                    {updateStatus === 'downloading'
+                      ? '正在下载更新'
+                      : updateStatus === 'installing'
+                        ? '正在安装更新'
+                        : '更新已安装，正在重启'}
+                  </strong>
+                  <div className="update-progress-track" aria-hidden="true">
+                    <div
+                      className={`update-progress-bar ${updateProgress?.percent == null ? 'update-progress-bar-indeterminate' : ''}`}
+                      style={{ width: `${updateProgress?.percent ?? 28}%` }}
+                    />
+                  </div>
+                  <p>{formatProgressLabel(updateProgress?.downloadedBytes ?? 0, updateProgress?.totalBytes ?? null)}</p>
+                </div>
+                <Button
+                  variant="primary"
+                  icon={updateStatus === 'installed' ? <CheckCircle2 /> : undefined}
+                  loading={updateStatus !== 'installed'}
+                  disabled
+                >
+                  {updateStatus === 'installed' ? '正在重启' : '正在更新'}
                 </Button>
               </>
             ) : (
@@ -252,4 +288,25 @@ export function SettingsPage() {
       )}
     </div>
   );
+}
+
+function formatProgressLabel(downloadedBytes: number, totalBytes: number | null): string {
+  if (!downloadedBytes && !totalBytes) {
+    return '正在准备下载...';
+  }
+
+  const downloaded = formatBytes(downloadedBytes);
+  return totalBytes ? `${downloaded} / ${formatBytes(totalBytes)}` : downloaded;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes <= 0) {
+    return '0 B';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+  const precision = value >= 10 || exponent === 0 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[exponent]}`;
 }

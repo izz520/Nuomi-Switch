@@ -34,3 +34,9 @@
   font-size: 13px;
   line-height: 1.6;
 }
+
+.update-modal-progress {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
