@@ -1,13 +1,29 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { CheckCircle2, Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
+import { Cable, CheckCircle2, Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Panel } from '../components/ui/Panel/Panel';
 import { Tabs, type Tab } from '../components/ui/Tabs/Tabs';
 import { openDataDir, openLogDir } from '../services/systemService';
+import { normalizeInvokeError } from '../services/tauriInvoke';
+import {
+  getWorkingLightHookStatus,
+  getWorkingLightSnapshot,
+  installWorkingLightHooks,
+  setWorkingLightAgentEnabled,
+  setWorkingLightMuted,
+  setWorkingLightWindowEnabled,
+} from '../services/workingLightService';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useUpdateStore } from '../stores/useUpdateStore';
 import type { AppSettings, SystemSnapshot } from '../types/system';
+import {
+  WORKING_LIGHT_STATE_LABELS,
+  type WorkingLightAgent,
+  type WorkingLightAgentState,
+  type WorkingLightHookStatus,
+  type WorkingLightPreferences,
+} from '../types/workingLight';
 
 const pathRows: Array<{ label: string; key: keyof SystemSnapshot }> = [
   { label: '应用数据', key: 'appDataDir' },
@@ -18,16 +34,18 @@ const pathRows: Array<{ label: string; key: keyof SystemSnapshot }> = [
   { label: 'Codex Auth', key: 'defaultCodexAuthFile' },
 ];
 
-type SettingsTab = 'about' | 'codex' | 'local';
+type SettingsTab = 'about' | 'codex' | 'floating' | 'local';
 
 const settingsTabs: Tab[] = [
   { id: 'about', label: '关于' },
   { id: 'codex', label: 'Codex 设置' },
+  { id: 'floating', label: '悬浮窗' },
   { id: 'local', label: '本地信息' },
 ];
 
 const projectUrl = 'https://github.com/izz520/Nuomi-Switch';
 const authorUrl = 'https://github.com/izz520';
+const workingLightStateDemoStates: WorkingLightAgentState[] = ['idle', 'working', 'done', 'waiting', 'error'];
 
 export function SettingsPage() {
   const {
@@ -57,6 +75,14 @@ export function SettingsPage() {
     Pick<AppSettings, 'quotaAutoRefreshEnabled' | 'quotaAutoRefreshIntervalMinutes'> | null
   >(null);
   const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
+  const [workingLightPreferences, setWorkingLightPreferences] = useState<WorkingLightPreferences | null>(null);
+  const [workingLightHookStatus, setWorkingLightHookStatus] = useState<WorkingLightHookStatus | null>(null);
+  const [workingLightLoading, setWorkingLightLoading] = useState(false);
+  const [workingLightSavingAgent, setWorkingLightSavingAgent] = useState<WorkingLightAgent | null>(null);
+  const [workingLightSavingMuted, setWorkingLightSavingMuted] = useState(false);
+  const [workingLightSavingWindow, setWorkingLightSavingWindow] = useState(false);
+  const [workingLightInstallingAgent, setWorkingLightInstallingAgent] = useState<WorkingLightAgent | null>(null);
+  const [workingLightError, setWorkingLightError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadSnapshot();
@@ -77,6 +103,12 @@ export function SettingsPage() {
     void loadAppVersion();
   }, [loadAppVersion]);
 
+  useEffect(() => {
+    if (activeTab === 'floating' && !workingLightPreferences) {
+      void loadWorkingLightPreferences();
+    }
+  }, [activeTab, workingLightPreferences]);
+
   async function handleSaveQuotaSettings() {
     if (!settings || !quotaSettingsDraft) {
       return;
@@ -91,10 +123,84 @@ export function SettingsPage() {
     setSettingsNotice('自动额度刷新设置已保存。');
   }
 
+  async function loadWorkingLightPreferences() {
+    setWorkingLightLoading(true);
+    setWorkingLightError(null);
+    try {
+      const [snapshot, hookStatus] = await Promise.all([getWorkingLightSnapshot(), getWorkingLightHookStatus()]);
+      setWorkingLightPreferences(snapshot.preferences);
+      setWorkingLightHookStatus(hookStatus);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightLoading(false);
+    }
+  }
+
+  async function handleWorkingLightAgentToggle(agent: WorkingLightAgent, enabled: boolean) {
+    setWorkingLightSavingAgent(agent);
+    setWorkingLightError(null);
+    try {
+      const preferences = await setWorkingLightAgentEnabled(agent, enabled);
+      setWorkingLightPreferences(preferences);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightSavingAgent(null);
+    }
+  }
+
+  async function handleWorkingLightMutedToggle(muted: boolean) {
+    setWorkingLightSavingMuted(true);
+    setWorkingLightError(null);
+    try {
+      const preferences = await setWorkingLightMuted(muted);
+      setWorkingLightPreferences(preferences);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightSavingMuted(false);
+    }
+  }
+
+  async function handleWorkingLightWindowToggle(enabled: boolean) {
+    setWorkingLightSavingWindow(true);
+    setWorkingLightError(null);
+    try {
+      const preferences = await setWorkingLightWindowEnabled(enabled);
+      setWorkingLightPreferences(preferences);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightSavingWindow(false);
+    }
+  }
+
+  async function handleInstallWorkingLightHooks(agent: WorkingLightAgent) {
+    setWorkingLightInstallingAgent(agent);
+    setWorkingLightError(null);
+    try {
+      const hookStatus = await installWorkingLightHooks(agent);
+      setWorkingLightHookStatus(hookStatus);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightInstallingAgent(null);
+    }
+  }
+
   const quotaSettingsChanged =
     Boolean(settings && quotaSettingsDraft) &&
     (settings?.quotaAutoRefreshEnabled !== quotaSettingsDraft?.quotaAutoRefreshEnabled ||
       settings?.quotaAutoRefreshIntervalMinutes !== quotaSettingsDraft?.quotaAutoRefreshIntervalMinutes);
+  const codexHooksInstalled = Boolean(workingLightHookStatus?.codex.installed);
+  const codexHooksAuthorized = Boolean(workingLightHookStatus?.codex.authorized);
+  const codexNeedsAuthorization = codexHooksInstalled && !codexHooksAuthorized;
 
   return (
     <div className="content">
@@ -190,6 +296,144 @@ export function SettingsPage() {
               检查更新
             </Button>
           </div>
+        </Panel>
+      ) : activeTab === 'floating' ? (
+        <Panel>
+          <h2 className="section-title">悬浮窗</h2>
+          <p className="muted">选择哪些助手会出现在工作状态悬浮窗里，并控制状态提示音。</p>
+          <div className="settings-grid quota-settings-grid">
+            <div className="settings-row working-light-settings-row">
+              <span>悬浮窗</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    aria-label="显示悬浮窗"
+                    checked={workingLightPreferences?.windowEnabled ?? true}
+                    disabled={workingLightLoading || workingLightSavingWindow}
+                    onChange={(event) => void handleWorkingLightWindowToggle(event.target.checked)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="settings-row working-light-settings-row">
+              <span>声音</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    aria-label="悬浮窗提示音"
+                    checked={!(workingLightPreferences?.muted ?? false)}
+                    disabled={workingLightLoading || workingLightSavingMuted}
+                    onChange={(event) => void handleWorkingLightMutedToggle(!event.target.checked)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="settings-row working-light-settings-row">
+              <span>Codex</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <span>显示</span>
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    checked={workingLightPreferences?.codexEnabled ?? true}
+                    disabled={workingLightLoading || workingLightSavingAgent === 'codex'}
+                    onChange={(event) => void handleWorkingLightAgentToggle('codex', event.target.checked)}
+                  />
+                </label>
+                <span className={`working-light-hook-status ${codexHooksInstalled ? 'installed' : 'missing'}`}>
+                  {codexHooksInstalled ? '识别已安装' : '识别未安装'}
+                </span>
+                {codexHooksInstalled ? (
+                  <span className={`working-light-hook-status ${codexHooksAuthorized ? 'authorized' : 'authorization'}`}>
+                    {codexHooksAuthorized ? '已授权' : '需授权'}
+                  </span>
+                ) : null}
+                <Button
+                  className="working-light-hook-button"
+                  variant="secondary"
+                  loading={workingLightInstallingAgent === 'codex'}
+                  disabled={workingLightLoading}
+                  icon={<Cable />}
+                  onClick={() => void handleInstallWorkingLightHooks('codex')}
+                >
+                  {codexHooksInstalled ? '重新安装识别' : '安装识别'}
+                </Button>
+              </div>
+            </div>
+            <div className="settings-row working-light-settings-row">
+              <span>Claude</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <span>显示</span>
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    checked={workingLightPreferences?.claudeEnabled ?? true}
+                    disabled={workingLightLoading || workingLightSavingAgent === 'claude'}
+                    onChange={(event) => void handleWorkingLightAgentToggle('claude', event.target.checked)}
+                  />
+                </label>
+                <span className={`working-light-hook-status ${workingLightHookStatus?.claude.installed ? 'installed' : 'missing'}`}>
+                  {workingLightHookStatus?.claude.installed ? '识别已安装' : '识别未安装'}
+                </span>
+                <Button
+                  className="working-light-hook-button"
+                  variant="secondary"
+                  loading={workingLightInstallingAgent === 'claude'}
+                  disabled={workingLightLoading}
+                  icon={<Cable />}
+                  onClick={() => void handleInstallWorkingLightHooks('claude')}
+                >
+                  {workingLightHookStatus?.claude.installed ? '重新安装识别' : '安装识别'}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="working-light-state-demo" aria-label="Working Light 状态预览">
+            <div className="working-light-state-demo-header">
+              <span>状态预览</span>
+              <small>仅展示样式，不会改变真实悬浮窗状态。</small>
+            </div>
+            <div className="working-light-state-demo-grid">
+              {workingLightStateDemoStates.map((state) => (
+                <div className={`working-light-state-demo-card ${state}`} key={state}>
+                  <span className={`working-light-state-demo-bulb ${state}`} aria-hidden="true" />
+                  <span className="working-light-state-demo-copy">
+                    <strong>Codex</strong>
+                    <span>{WORKING_LIGHT_STATE_LABELS[state]}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {codexNeedsAuthorization ? (
+            <div className="working-light-auth-guide" aria-label="Codex 授权方式">
+              <div className="working-light-auth-guide-header">
+                <span>Codex 授权方式</span>
+                <small>识别已安装后，按你使用的入口完成一次授权。</small>
+              </div>
+              <div className="working-light-auth-methods">
+                <div className="working-light-auth-method">
+                  <strong>CLI</strong>
+                  <p>
+                    在 Codex 中运行 <code>/hooks</code>，信任 Nuomi Switch hooks。
+                  </p>
+                </div>
+                <div className="working-light-auth-method">
+                  <strong>App</strong>
+                  <p>
+                    在设置页进入 <code>Hooks / 钩子</code>，授权 Nuomi Switch hooks。
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {workingLightError ? <p className="muted" role="alert">{workingLightError}</p> : null}
         </Panel>
       ) : activeTab === 'local' ? (
         <Panel>

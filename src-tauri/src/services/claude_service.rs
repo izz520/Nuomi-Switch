@@ -1043,7 +1043,7 @@ pub fn update_api_key(account_id: &str, input: ClaudeApiKeyInput) -> AppResult<C
         })?;
     if file.accounts[index].auth_mode != ClaudeAuthMode::ApiKey {
         return Err(AppError::new(
-        "CLAUDE_ACCOUNT_MODE_MISMATCH",
+            "CLAUDE_ACCOUNT_MODE_MISMATCH",
             "该账号不是 Gateway 类型。",
             "请选择一个 Claude Gateway 账号。",
         ));
@@ -1235,10 +1235,7 @@ fn write_claude_cli_api_settings(account: &ClaudeAccount) -> AppResult<()> {
         "ANTHROPIC_BASE_URL".to_string(),
         serde_json::Value::String(base_url),
     );
-    settings.insert(
-        "env".to_string(),
-        serde_json::Value::Object(env),
-    );
+    settings.insert("env".to_string(), serde_json::Value::Object(env));
     let content =
         serde_json::to_vec_pretty(&serde_json::Value::Object(settings)).map_err(|err| {
             AppError::new(

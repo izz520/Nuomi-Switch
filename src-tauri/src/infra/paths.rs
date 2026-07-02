@@ -47,6 +47,14 @@ pub fn settings_file_path() -> AppResult<PathBuf> {
     Ok(app_data_dir()?.join("settings.json"))
 }
 
+pub fn working_light_state_file_path() -> AppResult<PathBuf> {
+    Ok(app_data_dir()?.join("working_light_state.json"))
+}
+
+pub fn working_light_preferences_file_path() -> AppResult<PathBuf> {
+    Ok(app_data_dir()?.join("working_light_preferences.json"))
+}
+
 pub fn default_codex_home() -> AppResult<PathBuf> {
     if let Ok(path) = std::env::var(CODEX_HOME_ENV) {
         if !path.trim().is_empty() {
@@ -75,7 +83,11 @@ pub fn default_codex_config_file() -> AppResult<PathBuf> {
 
 pub fn default_claude_desktop_dir() -> AppResult<PathBuf> {
     dirs::home_dir()
-        .map(|path| path.join("Library").join("Application Support").join("Claude"))
+        .map(|path| {
+            path.join("Library")
+                .join("Application Support")
+                .join("Claude")
+        })
         .ok_or_else(|| {
             AppError::new(
                 "HOME_DIR_UNAVAILABLE",

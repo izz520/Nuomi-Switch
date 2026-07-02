@@ -127,8 +127,36 @@ pub fn open_codex_after_switch() -> AppResult<()> {
     ))
 }
 
+#[cfg(target_os = "macos")]
+pub fn activate_codex() -> AppResult<()> {
+    run_command(
+        Command::new("open").args(["-b", CODEX_BUNDLE_ID]),
+        "CODEX_APP_ACTIVATE_FAILED",
+        "Failed to show Codex.",
+        "Open Codex manually.",
+    )?;
+
+    for _ in 0..OPEN_WAIT_ATTEMPTS {
+        if !codex_main_process_ids()?.is_empty() || is_codex_running()? {
+            return Ok(());
+        }
+        thread::sleep(QUIT_WAIT_INTERVAL);
+    }
+
+    Err(AppError::new(
+        "CODEX_APP_ACTIVATE_TIMEOUT",
+        "Codex did not appear.",
+        "Open Codex manually.",
+    ))
+}
+
 #[cfg(not(target_os = "macos"))]
 pub fn open_codex_after_switch() -> AppResult<()> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn activate_codex() -> AppResult<()> {
     Ok(())
 }
 

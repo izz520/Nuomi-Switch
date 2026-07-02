@@ -686,10 +686,7 @@ mod tests {
         assert!(!account.is_pat_only());
         assert!(account.token_bundle.is_some());
         assert_eq!(account.plan_type.as_deref(), Some("team"));
-        assert_eq!(
-            account.to_view(false).capability_warning.as_deref(),
-            None
-        );
+        assert_eq!(account.to_view(false).capability_warning.as_deref(), None);
     }
 
     #[test]

@@ -1957,7 +1957,8 @@ mod tests {
     use rusqlite::Connection;
 
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!("nuomi-switch-{name}-{}", uuid::Uuid::new_v4()));
+        let path =
+            std::env::temp_dir().join(format!("nuomi-switch-{name}-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&path).expect("temp dir should be created");
         path
     }

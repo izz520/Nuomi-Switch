@@ -12,6 +12,7 @@ import { Users, History, RotateCcw } from 'lucide-react';
 import { useCodexAccountsStore } from './stores/useCodexAccountsStore';
 import { useCodexSessionsStore } from './stores/useCodexSessionsStore';
 import { useUpdateStore } from './stores/useUpdateStore';
+import { getWorkingLightSnapshot, showWorkingLightWindow } from './services/workingLightService';
 
 type Page = 'accounts' | 'sessions' | 'claude' | 'settings' | 'logs';
 type AccountTab = 'accounts' | 'sessions' | 'reset';
@@ -26,6 +27,19 @@ export function App() {
   useEffect(() => {
     void checkStartupUpdate();
   }, [checkStartupUpdate]);
+
+  useEffect(() => {
+    const showWindowWhenEnabled = async () => {
+      const snapshot = await getWorkingLightSnapshot();
+      if (snapshot.preferences.windowEnabled) {
+        await showWorkingLightWindow();
+      }
+    };
+
+    void showWindowWhenEnabled().catch((error) => {
+      console.error(error);
+    });
+  }, []);
 
   const accountTabs: Tab[] = [
     {

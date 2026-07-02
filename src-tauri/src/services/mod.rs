@@ -13,3 +13,4 @@ pub mod quota_scheduler_service;
 pub mod quota_service;
 pub mod settings_service;
 pub mod switch_service;
+pub mod working_light_service;
