@@ -1,6 +1,6 @@
 {
-    "version": "0.2.5",
+    "version": "0.2.6",
     "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases",
-    "notes": "更新Codex支持Personal Access Token账号登录和切换",
-    "publishedAt": "2026-06-30"
+    "notes": "更新Codex支持Session登录,更新Claude自定义模型错误的问题，新增悬浮窗展示当前AI工作进度",
+    "publishedAt": "2026-07-02"
 }
