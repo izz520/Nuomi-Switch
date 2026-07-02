@@ -61,6 +61,47 @@ function formatQuotaLabel(value?: number | null): string {
   return `${Math.max(0, Math.min(100, value))}%`;
 }
 
+function normalizePlanType(planType?: string | null): string {
+  return planType?.trim().toLowerCase().replace(/[\s_-]+/g, '') ?? '';
+}
+
+function getNonExpiringPlanLabel(planType?: string | null): string | null {
+  const plan = normalizePlanType(planType);
+  if (plan === 'free' || plan === '') {
+    return 'Free';
+  }
+  if (plan.includes('k12')) {
+    return 'K12';
+  }
+  return null;
+}
+
+function getValidityDisplay(
+  planType: string | null | undefined,
+  expiresAt: string | null,
+): { label: string; detail: string | null } {
+  const expiresAtText = formatExpiry(expiresAt);
+  if (expiresAtText) {
+    return {
+      label: `有效期 ${formatRemainingDays(expiresAt)} 天`,
+      detail: expiresAtText,
+    };
+  }
+
+  const nonExpiringPlanLabel = getNonExpiringPlanLabel(planType);
+  if (nonExpiringPlanLabel) {
+    return {
+      label: '有效期 无固定期限',
+      detail: null,
+    };
+  }
+
+  return {
+    label: '有效期未知',
+    detail: '未获取到期时间',
+  };
+}
+
 function parseResetCreditTimestamp(value?: number | null): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -227,8 +268,7 @@ export function AccountRow({
   const hasQuotaError = !isPersonalAccessToken && account.quotaError !== null && account.quotaError !== undefined;
   const quotaErrorSummary = account.quotaError ? getQuotaErrorSummary(account.quotaError) : null;
   const expiresAt = account.subscriptionActiveUntil ?? null;
-  const validityDays = formatRemainingDays(expiresAt);
-  const expiresAtText = formatExpiry(expiresAt) ?? '未获取到期时间';
+  const validityDisplay = getValidityDisplay(account.planType, expiresAt);
   const resetCredits = account.quota?.resetCredits ?? null;
   const resetCreditTotal = resetCredits ? Math.max(resetCredits.total, resetCredits.credits.length, 0) : null;
   const resetCreditItems = resetCredits?.credits ?? [];
@@ -395,9 +435,9 @@ export function AccountRow({
           <span className="account-validity">
             <span>
               <CalendarDays size={15} />
-              有效期 {validityDays} 天
+              {validityDisplay.label}
             </span>
-            <span>{expiresAtText}</span>
+            {validityDisplay.detail ? <span>{validityDisplay.detail}</span> : null}
           </span>
         ) : null}
       </div>

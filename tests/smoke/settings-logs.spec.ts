@@ -15,6 +15,9 @@ async function installSystemMock(page: Page): Promise<void> {
           if (command === 'get_current_codex_account') {
             return null;
           }
+          if (command === 'list_codex_sessions') {
+            return [];
+          }
           if (command === 'get_system_snapshot') {
             return {
               appDataDir: '/Users/smoke/Library/Application Support/nuomi-switch',
@@ -75,11 +78,12 @@ test.describe('Settings and logs smoke', () => {
     await page.getByTitle('设置').click();
 
     await expect(page.getByRole('heading', { name: '设置', level: 1 })).toBeVisible();
-    await expect(page.getByText('/Users/smoke/.codex/auth.json')).toBeVisible();
-    await expect(page.getByText('已找到')).toBeVisible();
     await expect(page.getByText('v0.1.0')).toBeVisible();
     await page.getByRole('button', { name: '检查更新' }).click();
     await expect(page.getByText('尚未配置更新清单地址。')).toBeVisible();
+    await page.getByRole('tab', { name: '本地信息' }).click();
+    await expect(page.getByText('/Users/smoke/.codex/auth.json')).toBeVisible();
+    await expect(page.getByText('已找到')).toBeVisible();
     await page.getByRole('button', { name: '检测 Codex 路径' }).click();
     await expectNoHorizontalOverflow(page);
   });

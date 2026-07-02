@@ -40,7 +40,7 @@ async function installImportMock(page: Page): Promise<void> {
     Object.defineProperty(window, '__TAURI_INTERNALS__', {
       configurable: true,
       value: {
-        invoke: async (command: string) => {
+        invoke: async (command: string, args?: Record<string, unknown>) => {
           if (command === 'list_codex_accounts') {
             return [];
           }
@@ -51,6 +51,14 @@ async function installImportMock(page: Page): Promise<void> {
             return importedAccount;
           }
           if (command === 'import_codex_from_json') {
+            const jsonContent = typeof args?.jsonContent === 'string' ? args.jsonContent : '';
+            if (jsonContent.includes('"auth_mode": "chatgpt"')) {
+              return {
+                imported: [oauthImportedAccount],
+                skipped: [],
+                failed: [],
+              };
+            }
             return {
               imported: [importedAccount],
               skipped: [],
@@ -137,7 +145,7 @@ test.describe('Import drawer smoke', () => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: '添加账号' }).first().click();
+    await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
     await page.getByRole('tab', { name: 'API Key' }).click();
     await page.getByPlaceholder('sk-...').fill('sk-smoke-redacted');
     await page.getByPlaceholder('可选').first().fill('Smoke API Key');
@@ -151,7 +159,7 @@ test.describe('Import drawer smoke', () => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: '添加账号' }).first().click();
+    await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
     await page.getByRole('tab', { name: 'OAuth 登录' }).click();
     await page.getByRole('button', { name: '开始登录' }).click();
 
@@ -167,11 +175,41 @@ test.describe('Import drawer smoke', () => {
     await expect(page.getByText('smoke.oauth@example.test')).toBeVisible();
   });
 
+  test('imports a ChatGPT session through the Session tab', async ({ page }) => {
+    await installImportMock(page);
+
+    await page.goto('/');
+    await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
+    await page.getByRole('tab', { name: 'Session' }).click();
+
+    await page.getByPlaceholder('{"user":{"email":"mark@example.com"}').fill(
+      JSON.stringify({
+        user: {
+          id: 'user_smoke',
+          email: 'smoke.oauth@example.test',
+        },
+        expires: '2026-08-06T14:29:36.155Z',
+        account: {
+          id: 'acct_smoke',
+          planType: 'plus',
+        },
+        accessToken: 'smoke-access-token',
+        sessionToken: 'smoke-session-token',
+      }),
+    );
+
+    await expect(page.getByText('1 个 Session 可导入')).toBeVisible();
+    await addAccountConfirmButton(page).click();
+
+    await expect(page.getByRole('dialog', { name: '添加账号' })).toBeHidden();
+    await expect(page.locator('.account-row').filter({ hasText: 'smoke.oauth@example.test' })).toBeVisible();
+  });
+
   test('shows source-specific forms and partial failure results', async ({ page }) => {
     await installImportMock(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: '添加账号' }).first().click();
+    await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
 
     await page.getByRole('tab', { name: '当前本地授权' }).click();
     await expect(page.getByText('已准备好添加当前本地 Codex 授权。')).toBeVisible();
@@ -188,8 +226,10 @@ test.describe('Import drawer smoke', () => {
     await expect(page.getByText(/CODEX_AUTH_INVALID_FORMAT/)).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await page.getByRole('tab', { name: 'Token' }).click();
-    await expect(page.getByPlaceholder('粘贴 id_token')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Token' })).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Session' }).click();
+    await expect(page.getByPlaceholder('{"user":{"email":"mark@example.com"}')).toBeVisible();
 
     await page.getByRole('tab', { name: 'JSON 文件' }).click();
     await expect(page.getByRole('button', { name: '选择 JSON' })).toBeVisible();

@@ -1,8 +1,20 @@
-import { CheckCircle2, Copy, ExternalLink, FileJson, FolderOpen, KeyRound, LockKeyhole, TextCursorInput, X } from 'lucide-react';
+import {
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  FileJson,
+  Fingerprint,
+  FolderOpen,
+  KeyRound,
+  LockKeyhole,
+  TextCursorInput,
+  X,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo } from 'react';
 import { useCodexAccountsStore } from '../../stores/useCodexAccountsStore';
 import { type ImportSource, useImportFlowStore } from '../../stores/useImportFlowStore';
+import { previewChatGPTSessionText } from '../../services/chatgptSessionImport';
 import { isOAuthAuthMode, type CodexAccountView } from '../../types/codex';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -31,6 +43,12 @@ const importSources: ImportSourceOption[] = [
     icon: <KeyRound size={16} />,
   },
   {
+    id: 'session',
+    label: 'Session',
+    description: '粘贴 ChatGPT session JSON',
+    icon: <Fingerprint size={16} />,
+  },
+  {
     id: 'local',
     label: '当前本地授权',
     description: '使用 ~/.codex/auth.json',
@@ -47,12 +65,6 @@ const importSources: ImportSourceOption[] = [
     label: 'JSON 文本',
     description: '粘贴授权 JSON 内容',
     icon: <TextCursorInput size={16} />,
-  },
-  {
-    id: 'token',
-    label: 'Token',
-    description: '粘贴 id/access/refresh token',
-    icon: <LockKeyhole size={16} />,
   },
 ];
 
@@ -115,6 +127,7 @@ export function ImportDrawer() {
     selectingFiles,
     previewingBatch,
     jsonText,
+    sessionText,
     filePaths,
     batchPreview,
     batchSelectedItemIds,
@@ -125,6 +138,7 @@ export function ImportDrawer() {
     failedImports,
     error,
     setJsonText,
+    setSessionText,
     setTokenField,
     setApiKeyField,
     setOAuthCallbackUrl,
@@ -154,6 +168,9 @@ export function ImportDrawer() {
     if (source === 'jsonText') {
       return jsonText.trim().length === 0;
     }
+    if (source === 'session') {
+      return sessionText.trim().length === 0;
+    }
     if (source === 'token') {
       return tokenFields.idToken.trim().length === 0 || tokenFields.accessToken.trim().length === 0;
     }
@@ -176,6 +193,7 @@ export function ImportDrawer() {
     oauth.submittingCallback,
     previewingBatch,
     selectingFiles,
+    sessionText,
     source,
     batchPreview,
     batchSelectedItemIds.length,
@@ -338,6 +356,32 @@ export function ImportDrawer() {
                 </label>
               ) : null}
 
+              {source === 'session' ? (
+                <div className="import-field-group">
+                  <div className="session-import-guide">
+                    <strong>ChatGPT Session</strong>
+                    <p>
+                      先在浏览器登录 ChatGPT，然后打开{' '}
+                      <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">
+                        https://chatgpt.com/api/auth/session
+                      </a>
+                      ，复制整段 JSON。
+                    </p>
+                    <p>Session 通常没有 refresh_token，导入后 access token 过期就需要重新导入或改用 OAuth 登录。</p>
+                  </div>
+                  <label className="import-field">
+                    <span>Session JSON</span>
+                    <textarea
+                      rows={10}
+                      spellCheck={false}
+                      value={sessionText}
+                      placeholder='{"user":{"email":"mark@example.com"},"expires":"2026-08-06T14:29:36.155Z","account":{"id":"...","planType":"plus"},"accessToken":"...","sessionToken":"..."}'
+                      onChange={(event) => setSessionText(event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
+
               {source === 'token' ? (
                 <div className="import-field-group">
                   <label className="import-field">
@@ -420,7 +464,7 @@ export function ImportDrawer() {
             <section className="drawer-preview" aria-labelledby="import-preview-title">
               <h3 id="import-preview-title">导入预览</h3>
               {resultAccounts.length === 0 && failedImports.length === 0 ? (
-                <PreviewHint source={source} jsonText={jsonText} filePaths={filePaths} />
+                  <PreviewHint source={source} jsonText={jsonText} sessionText={sessionText} filePaths={filePaths} />
               ) : null}
               {resultAccounts.length > 0 || failedImports.length > 0 ? (
                 <p className="import-summary">
@@ -478,12 +522,17 @@ export function ImportDrawer() {
 interface PreviewHintProps {
   source: ImportSource;
   jsonText: string;
+  sessionText: string;
   filePaths: string[];
 }
 
-function PreviewHint({ source, jsonText, filePaths }: PreviewHintProps) {
+function PreviewHint({ source, jsonText, sessionText, filePaths }: PreviewHintProps) {
   if (source === 'jsonText') {
     return <p className="muted">{jsonTextPreview(jsonText)}</p>;
+  }
+
+  if (source === 'session') {
+    return <p className="muted">{previewChatGPTSessionText(sessionText)}</p>;
   }
 
   if (source === 'jsonFile' || source === 'batchFiles') {
