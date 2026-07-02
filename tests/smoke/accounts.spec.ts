@@ -62,6 +62,26 @@ const apiKeyAccount = {
   capabilityWarning: 'API key accounts cannot refresh ChatGPT quota.',
 };
 
+const freeAccount = {
+  ...oauthAccount,
+  id: 'free-oauth-smoke',
+  displayName: 'Free Codex OAuth',
+  email: 'free.codex@example.test',
+  accountId: 'acct_free_smoke',
+  userId: 'user_free_smoke',
+  planType: 'free',
+  subscriptionActiveUntil: null,
+  quota: {
+    ...oauthAccount.quota,
+    weeklyRemainingPercent: null,
+    resetCredits: {
+      total: 0,
+      credits: [],
+      updatedAt: 1_799_990_000,
+    },
+  },
+};
+
 async function installTauriMock(page: Page, options: TauriMockOptions): Promise<void> {
   await page.addInitScript((mockOptions) => {
     const accounts = mockOptions.accounts ?? [];
@@ -76,6 +96,9 @@ async function installTauriMock(page: Page, options: TauriMockOptions): Promise<
           }
           if (command === 'get_current_codex_account') {
             return currentAccount;
+          }
+          if (command === 'list_codex_sessions') {
+            return [];
           }
           if (command === 'refresh_all_codex_quotas') {
             return accounts;
@@ -118,8 +141,8 @@ test.describe('Accounts page smoke', () => {
 
     await expect(page.getByRole('heading', { name: '还没有 Codex 账号' })).toBeVisible();
     await expect(page.getByText('添加当前本地 Codex 授权')).toBeVisible();
-    await page.getByRole('button', { name: '添加账号' }).first().click();
-    await expect(page.getByRole('dialog', { name: '添加账号' })).toBeVisible();
+    await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
+    await expect(page.getByRole('dialog', { name: '添加 Codex 账号' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -131,7 +154,7 @@ test.describe('Accounts page smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByLabel('账号统计')).toContainText('总账号');
+    await expect(page.getByLabel('账号统计')).toContainText('Codex 账号');
     const oauthRow = page.locator('.account-row').filter({ hasText: oauthAccount.email });
     const apiKeyRow = page.locator('.account-row').filter({ hasText: 'API Key Only' });
 
@@ -143,12 +166,25 @@ test.describe('Accounts page smoke', () => {
     await expect(oauthRow.getByText('5h')).toBeVisible();
     await expect(oauthRow.getByText('7d')).toBeVisible();
     await expect(oauthRow.getByText('重置机会')).toBeVisible();
-    await expect(oauthRow.getByText('2 次')).toBeVisible();
-    await expect(oauthRow.getByText('acct_team_nuomi_switch_smoke_long_identifier_001')).toBeVisible();
-
+    await expect(oauthRow.getByRole('button', { name: /重置机会，2 次可用/ })).toBeVisible();
     await apiKeyRow.locator('.account-summary').click();
     await expect(apiKeyRow.getByText('API Key', { exact: true })).toBeVisible();
     await expect(apiKeyRow.getByRole('button', { name: '切换账号' })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('uses non-expiring copy for Free accounts without subscription expiry', async ({ page }) => {
+    await installTauriMock(page, {
+      accounts: [freeAccount],
+      currentAccount: freeAccount,
+    });
+
+    await page.goto('/');
+
+    const freeRow = page.locator('.account-row').filter({ hasText: 'free.codex@example.test' });
+    await expect(freeRow).toBeVisible();
+    await expect(freeRow.getByText('有效期 无固定期限')).toBeVisible();
+    await expect(freeRow.getByText('Free 账号无到期日')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 
@@ -165,11 +201,11 @@ test.describe('Accounts page smoke', () => {
     await expect(oauthRow).toBeVisible();
     await expect(apiKeyRow).toBeVisible();
 
-    await page.getByLabel('搜索账号').fill('API Key Only');
+    await page.getByLabel('搜索 Codex 账号').fill('API Key Only');
     await expect(apiKeyRow).toBeVisible();
     await expect(oauthRow).toHaveCount(0);
 
-    await page.getByLabel('搜索账号').fill('no-such-account');
+    await page.getByLabel('搜索 Codex 账号').fill('no-such-account');
     await expect(page.getByText('没有匹配')).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });

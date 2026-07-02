@@ -14,12 +14,13 @@ import {
   startCodexOAuthLogin,
   submitCodexOAuthCallbackUrl,
 } from '../services/codexImportService';
+import { convertChatGPTSessionTextToCodexJson } from '../services/chatgptSessionImport';
 import type { CodexAccountView } from '../types/codex';
 import type { BatchImportSession, ImportResult, OAuthStartResult } from '../types/import';
 import type { AppError } from '../types/system';
 import { normalizeInvokeError } from '../services/tauriInvoke';
 
-export type ImportSource = 'local' | 'jsonFile' | 'jsonText' | 'batchFiles' | 'oauth' | 'token' | 'apiKey';
+export type ImportSource = 'local' | 'jsonFile' | 'jsonText' | 'batchFiles' | 'oauth' | 'session' | 'token' | 'apiKey';
 
 interface TokenFields {
   idToken: string;
@@ -51,6 +52,7 @@ interface ImportFlowState {
   importing: boolean;
   selectingFiles: boolean;
   jsonText: string;
+  sessionText: string;
   filePaths: string[];
   batchPreview: BatchImportSession | null;
   batchSelectedItemIds: string[];
@@ -66,6 +68,7 @@ interface ImportFlowState {
   closeDrawer: () => void;
   setSource: (source: ImportSource) => void;
   setJsonText: (jsonText: string) => void;
+  setSessionText: (sessionText: string) => void;
   setTokenField: (field: keyof TokenFields, value: string) => void;
   setApiKeyField: (field: keyof ApiKeyFields, value: string) => void;
   setOAuthCallbackUrl: (callbackUrl: string) => void;
@@ -145,6 +148,18 @@ function validateJsonText(jsonText: string): AppError | null {
   return null;
 }
 
+function validateSessionText(sessionText: string): AppError | null {
+  if (sessionText.trim().length === 0) {
+    return appError(
+      'IMPORT_SESSION_EMPTY',
+      'Session JSON is empty.',
+      'Open https://chatgpt.com/api/auth/session, copy the full JSON response, then paste it here.',
+    );
+  }
+
+  return null;
+}
+
 function validateTokenFields(fields: TokenFields): AppError | null {
   if (fields.idToken.trim().length === 0) {
     return appError('IMPORT_ID_TOKEN_EMPTY', 'ID token is required.', 'Paste the id_token value from a Codex auth file.');
@@ -196,6 +211,7 @@ function shouldCloseAfterSuccessfulImport(result: ImportResult): boolean {
 function emptyImportDraft() {
   return {
     jsonText: '',
+    sessionText: '',
     filePaths: [],
     batchPreview: null,
     batchSelectedItemIds: [],
@@ -210,6 +226,7 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
   importing: false,
   selectingFiles: false,
   jsonText: '',
+  sessionText: '',
   filePaths: [],
   batchPreview: null,
   batchSelectedItemIds: [],
@@ -281,6 +298,9 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
   },
   setJsonText(jsonText) {
     set({ jsonText, error: null, resultAccounts: [], failedImports: [], batchPreview: null, batchSelectedItemIds: [] });
+  },
+  setSessionText(sessionText) {
+    set({ sessionText, error: null, resultAccounts: [], failedImports: [], batchPreview: null, batchSelectedItemIds: [] });
   },
   setTokenField(field, value) {
     set((state) => ({
@@ -533,6 +553,13 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
             state.apiKeyFields.displayName.trim() || undefined,
           ),
         );
+      } else if (state.source === 'session') {
+        const validationError = validateSessionText(state.sessionText);
+        if (validationError) {
+          throw validationError;
+        }
+        const converted = convertChatGPTSessionTextToCodexJson(state.sessionText.trim());
+        result = await importCodexFromJson(converted.jsonContent);
       } else if (state.source === 'oauth') {
         if (!state.oauth.login) {
           throw oauthRequiredError();
