@@ -24,6 +24,10 @@ export function setWorkingLightMuted(muted: boolean): Promise<WorkingLightPrefer
   return invokeCommand('working_light_set_muted', { muted });
 }
 
+export function setWorkingLightWindowEnabled(enabled: boolean): Promise<WorkingLightPreferences> {
+  return invokeCommand('working_light_set_window_enabled', { enabled });
+}
+
 export function setWorkingLightAgentEnabled(
   agent: WorkingLightAgent,
   enabled: boolean,

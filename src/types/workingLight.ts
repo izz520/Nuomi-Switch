@@ -14,6 +14,7 @@ export interface WorkingLightStateFile {
 }
 
 export interface WorkingLightPreferences {
+  windowEnabled: boolean;
   muted: boolean;
   doneAutoIdleSeconds: number;
   waitingBlinkSeconds: number;
@@ -32,6 +33,7 @@ export interface WorkingLightDetection {
 
 export interface WorkingLightHookInstallation {
   installed: boolean;
+  authorized?: boolean;
   path: string;
 }
 
@@ -64,6 +66,7 @@ export const DEFAULT_WORKING_LIGHT_STATE: WorkingLightStateFile = {
 };
 
 export const DEFAULT_WORKING_LIGHT_PREFERENCES: WorkingLightPreferences = {
+  windowEnabled: true,
   muted: false,
   doneAutoIdleSeconds: 600,
   waitingBlinkSeconds: 10,

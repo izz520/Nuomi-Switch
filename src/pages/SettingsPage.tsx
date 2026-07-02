@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { Activity, Cable, CheckCircle2, Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
+import { Cable, CheckCircle2, Download, ExternalLink, RefreshCw, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Panel } from '../components/ui/Panel/Panel';
 import { Tabs, type Tab } from '../components/ui/Tabs/Tabs';
@@ -11,7 +11,8 @@ import {
   getWorkingLightSnapshot,
   installWorkingLightHooks,
   setWorkingLightAgentEnabled,
-  showWorkingLightWindow,
+  setWorkingLightMuted,
+  setWorkingLightWindowEnabled,
 } from '../services/workingLightService';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useUpdateStore } from '../stores/useUpdateStore';
@@ -71,8 +72,10 @@ export function SettingsPage() {
   const [workingLightHookStatus, setWorkingLightHookStatus] = useState<WorkingLightHookStatus | null>(null);
   const [workingLightLoading, setWorkingLightLoading] = useState(false);
   const [workingLightSavingAgent, setWorkingLightSavingAgent] = useState<WorkingLightAgent | null>(null);
+  const [workingLightSavingMuted, setWorkingLightSavingMuted] = useState(false);
+  const [workingLightSavingWindow, setWorkingLightSavingWindow] = useState(false);
   const [workingLightInstallingAgent, setWorkingLightInstallingAgent] = useState<WorkingLightAgent | null>(null);
-  const [workingLightNotice, setWorkingLightNotice] = useState<string | null>(null);
+  const [workingLightError, setWorkingLightError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadSnapshot();
@@ -113,27 +116,16 @@ export function SettingsPage() {
     setSettingsNotice('自动额度刷新设置已保存。');
   }
 
-  async function handleShowWorkingLightWindow() {
-    setWorkingLightNotice(null);
-    try {
-      await showWorkingLightWindow();
-      setWorkingLightNotice('工作悬浮窗已打开。');
-    } catch (error) {
-      const appError = normalizeInvokeError(error);
-      setWorkingLightNotice(appError.message);
-    }
-  }
-
   async function loadWorkingLightPreferences() {
     setWorkingLightLoading(true);
-    setWorkingLightNotice(null);
+    setWorkingLightError(null);
     try {
       const [snapshot, hookStatus] = await Promise.all([getWorkingLightSnapshot(), getWorkingLightHookStatus()]);
       setWorkingLightPreferences(snapshot.preferences);
       setWorkingLightHookStatus(hookStatus);
     } catch (error) {
       const appError = normalizeInvokeError(error);
-      setWorkingLightNotice(appError.message);
+      setWorkingLightError(appError.message);
     } finally {
       setWorkingLightLoading(false);
     }
@@ -141,33 +133,55 @@ export function SettingsPage() {
 
   async function handleWorkingLightAgentToggle(agent: WorkingLightAgent, enabled: boolean) {
     setWorkingLightSavingAgent(agent);
-    setWorkingLightNotice(null);
+    setWorkingLightError(null);
     try {
       const preferences = await setWorkingLightAgentEnabled(agent, enabled);
       setWorkingLightPreferences(preferences);
-      setWorkingLightNotice(`${agent === 'codex' ? 'Codex' : 'Claude'} 悬浮窗已${enabled ? '开启' : '关闭'}。`);
     } catch (error) {
       const appError = normalizeInvokeError(error);
-      setWorkingLightNotice(appError.message);
+      setWorkingLightError(appError.message);
     } finally {
       setWorkingLightSavingAgent(null);
     }
   }
 
+  async function handleWorkingLightMutedToggle(muted: boolean) {
+    setWorkingLightSavingMuted(true);
+    setWorkingLightError(null);
+    try {
+      const preferences = await setWorkingLightMuted(muted);
+      setWorkingLightPreferences(preferences);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightSavingMuted(false);
+    }
+  }
+
+  async function handleWorkingLightWindowToggle(enabled: boolean) {
+    setWorkingLightSavingWindow(true);
+    setWorkingLightError(null);
+    try {
+      const preferences = await setWorkingLightWindowEnabled(enabled);
+      setWorkingLightPreferences(preferences);
+    } catch (error) {
+      const appError = normalizeInvokeError(error);
+      setWorkingLightError(appError.message);
+    } finally {
+      setWorkingLightSavingWindow(false);
+    }
+  }
+
   async function handleInstallWorkingLightHooks(agent: WorkingLightAgent) {
     setWorkingLightInstallingAgent(agent);
-    setWorkingLightNotice(null);
+    setWorkingLightError(null);
     try {
       const hookStatus = await installWorkingLightHooks(agent);
       setWorkingLightHookStatus(hookStatus);
-      setWorkingLightNotice(
-        agent === 'codex'
-          ? 'Codex 识别已安装。请在 Codex 里运行 /hooks 并信任 Nuomi Switch hooks。'
-          : 'Claude 识别已安装。新开 Claude 会话后生效。',
-      );
     } catch (error) {
       const appError = normalizeInvokeError(error);
-      setWorkingLightNotice(appError.message);
+      setWorkingLightError(appError.message);
     } finally {
       setWorkingLightInstallingAgent(null);
     }
@@ -177,6 +191,9 @@ export function SettingsPage() {
     Boolean(settings && quotaSettingsDraft) &&
     (settings?.quotaAutoRefreshEnabled !== quotaSettingsDraft?.quotaAutoRefreshEnabled ||
       settings?.quotaAutoRefreshIntervalMinutes !== quotaSettingsDraft?.quotaAutoRefreshIntervalMinutes);
+  const codexHooksInstalled = Boolean(workingLightHookStatus?.codex.installed);
+  const codexHooksAuthorized = Boolean(workingLightHookStatus?.codex.authorized);
+  const codexNeedsAuthorization = codexHooksInstalled && !codexHooksAuthorized;
 
   return (
     <div className="content">
@@ -276,8 +293,38 @@ export function SettingsPage() {
       ) : activeTab === 'floating' ? (
         <Panel>
           <h2 className="section-title">悬浮窗</h2>
-          <p className="muted">选择哪些助手会出现在工作状态悬浮窗里。</p>
+          <p className="muted">选择哪些助手会出现在工作状态悬浮窗里，并控制状态提示音。</p>
           <div className="settings-grid quota-settings-grid">
+            <div className="settings-row working-light-settings-row">
+              <span>悬浮窗</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    aria-label="显示悬浮窗"
+                    checked={workingLightPreferences?.windowEnabled ?? true}
+                    disabled={workingLightLoading || workingLightSavingWindow}
+                    onChange={(event) => void handleWorkingLightWindowToggle(event.target.checked)}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="settings-row working-light-settings-row">
+              <span>声音</span>
+              <div className="working-light-settings-controls">
+                <label className="working-light-switch-label">
+                  <input
+                    className="settings-switch"
+                    type="checkbox"
+                    aria-label="悬浮窗提示音"
+                    checked={!(workingLightPreferences?.muted ?? false)}
+                    disabled={workingLightLoading || workingLightSavingMuted}
+                    onChange={(event) => void handleWorkingLightMutedToggle(!event.target.checked)}
+                  />
+                </label>
+              </div>
+            </div>
             <div className="settings-row working-light-settings-row">
               <span>Codex</span>
               <div className="working-light-settings-controls">
@@ -291,9 +338,14 @@ export function SettingsPage() {
                     onChange={(event) => void handleWorkingLightAgentToggle('codex', event.target.checked)}
                   />
                 </label>
-                <span className={`working-light-hook-status ${workingLightHookStatus?.codex.installed ? 'installed' : 'missing'}`}>
-                  {workingLightHookStatus?.codex.installed ? '识别已安装' : '识别未安装'}
+                <span className={`working-light-hook-status ${codexHooksInstalled ? 'installed' : 'missing'}`}>
+                  {codexHooksInstalled ? '识别已安装' : '识别未安装'}
                 </span>
+                {codexHooksInstalled ? (
+                  <span className={`working-light-hook-status ${codexHooksAuthorized ? 'authorized' : 'authorization'}`}>
+                    {codexHooksAuthorized ? '已授权' : '需授权'}
+                  </span>
+                ) : null}
                 <Button
                   className="working-light-hook-button"
                   variant="secondary"
@@ -302,7 +354,7 @@ export function SettingsPage() {
                   icon={<Cable />}
                   onClick={() => void handleInstallWorkingLightHooks('codex')}
                 >
-                  {workingLightHookStatus?.codex.installed ? '重新安装识别' : '安装识别'}
+                  {codexHooksInstalled ? '重新安装识别' : '安装识别'}
                 </Button>
               </div>
             </div>
@@ -335,15 +387,29 @@ export function SettingsPage() {
               </div>
             </div>
           </div>
-          {workingLightNotice ? <p className="account-switch-notice">{workingLightNotice}</p> : null}
-          <div className="toolbar-actions">
-            <Button variant="secondary" icon={<Activity />} onClick={() => void handleShowWorkingLightWindow()}>
-              打开悬浮窗
-            </Button>
-            <Button variant="secondary" loading={workingLightLoading} icon={<RefreshCw />} onClick={() => void loadWorkingLightPreferences()}>
-              刷新状态
-            </Button>
-          </div>
+          {codexNeedsAuthorization ? (
+            <div className="working-light-auth-guide" aria-label="Codex 授权方式">
+              <div className="working-light-auth-guide-header">
+                <span>Codex 授权方式</span>
+                <small>识别已安装后，按你使用的入口完成一次授权。</small>
+              </div>
+              <div className="working-light-auth-methods">
+                <div className="working-light-auth-method">
+                  <strong>CLI</strong>
+                  <p>
+                    在 Codex 中运行 <code>/hooks</code>，信任 Nuomi Switch hooks。
+                  </p>
+                </div>
+                <div className="working-light-auth-method">
+                  <strong>App</strong>
+                  <p>
+                    在设置页进入 <code>Hooks / 钩子</code>，授权 Nuomi Switch hooks。
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {workingLightError ? <p className="muted" role="alert">{workingLightError}</p> : null}
         </Panel>
       ) : activeTab === 'local' ? (
         <Panel>

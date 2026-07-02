@@ -1,12 +1,8 @@
 import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Minus, Volume2, VolumeX, X } from 'lucide-react';
 import { startWindowDragging } from '../../services/windowService';
 import {
-  closeWorkingLightWindow,
   getWorkingLightSnapshot,
-  hideWorkingLightWindow,
   resizeWorkingLightWindow,
-  setWorkingLightMuted,
 } from '../../services/workingLightService';
 import {
   DEFAULT_WORKING_LIGHT_PREFERENCES,
@@ -153,23 +149,19 @@ export function WorkingLightApp() {
 
   const activeDetections = useMemo(() => selectVisibleDetections(detections, preferences), [detections, preferences]);
 
-  async function toggleMuted(): Promise<void> {
-    const next = await setWorkingLightMuted(!preferences.muted);
-    setPreferences(next);
-  }
-
   function handleShellPointerDown(event: PointerEvent<HTMLElement>): void {
     if (event.button !== 0) {
-      return;
-    }
-    if ((event.target as HTMLElement).closest('button')) {
       return;
     }
     void startWindowDragging();
   }
 
   return (
-    <main className="working-light-shell" data-tauri-drag-region onPointerDown={handleShellPointerDown}>
+    <main
+      className="working-light-shell"
+      data-tauri-drag-region
+      onPointerDown={handleShellPointerDown}
+    >
       <section className={`working-light-grid count-${Math.max(activeDetections.length, 1)}`} aria-label="工作状态">
         {activeDetections.length === 0 ? (
           <WorkingLightEmptyColumn preferences={preferences} />
@@ -184,35 +176,6 @@ export function WorkingLightApp() {
           ))
         )}
       </section>
-      <div className="working-light-controls" aria-label="窗口控制">
-        <button
-          className="working-light-icon-button"
-          type="button"
-          aria-label={preferences.muted ? '取消静音' : '静音'}
-          title={preferences.muted ? '取消静音' : '静音'}
-          onClick={() => void toggleMuted()}
-        >
-          {preferences.muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-        </button>
-        <button
-          className="working-light-icon-button"
-          type="button"
-          aria-label="隐藏"
-          title="隐藏"
-          onClick={() => void hideWorkingLightWindow()}
-        >
-          <Minus size={13} />
-        </button>
-        <button
-          className="working-light-icon-button close"
-          type="button"
-          aria-label="关闭"
-          title="关闭"
-          onClick={() => void closeWorkingLightWindow()}
-        >
-          <X size={13} />
-        </button>
-      </div>
     </main>
   );
 }

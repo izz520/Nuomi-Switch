@@ -17,9 +17,9 @@ use crate::models::working_light::{
 };
 
 const WINDOW_LABEL: &str = "working-light";
-const WINDOW_HEIGHT: f64 = 68.0;
-const SINGLE_AGENT_WINDOW_WIDTH: f64 = 202.0;
-const DOUBLE_AGENT_WINDOW_WIDTH: f64 = 292.0;
+const WINDOW_HEIGHT: f64 = 56.0;
+const SINGLE_AGENT_WINDOW_WIDTH: f64 = 122.0;
+const DOUBLE_AGENT_WINDOW_WIDTH: f64 = 212.0;
 const MANUAL_WORKING_AUTO_IDLE_SECONDS: i64 = 15;
 const CODEX_HOOKS_START: &str = "# >>> nuomi-switch working light codex hooks start";
 const CODEX_HOOKS_END: &str = "# <<< nuomi-switch working light codex hooks end";
@@ -166,6 +166,20 @@ pub fn set_muted(muted: bool) -> AppResult<WorkingLightPreferences> {
     Ok(preferences)
 }
 
+pub fn set_window_enabled(app: &AppHandle, enabled: bool) -> AppResult<WorkingLightPreferences> {
+    if enabled {
+        show_window(app)?;
+    } else {
+        hide_window(app)?;
+    }
+
+    let mut preferences = read_preferences()?;
+    preferences.window_enabled = enabled;
+    let path = paths::working_light_preferences_file_path()?;
+    write_json(&path, &preferences)?;
+    Ok(preferences)
+}
+
 pub fn set_agent_enabled(
     agent: WorkingLightAgent,
     enabled: bool,
@@ -190,14 +204,17 @@ pub fn get_hook_status() -> AppResult<WorkingLightHookStatus> {
         .ok()
         .and_then(|content| serde_json::from_str::<Value>(&content).ok())
         .unwrap_or(Value::Null);
+    let codex_installed = codex_hooks_installed(&codex_content)?;
 
     Ok(WorkingLightHookStatus {
         codex: WorkingLightHookInstallation {
-            installed: codex_hooks_installed(&codex_content)?,
+            installed: codex_installed,
+            authorized: Some(codex_installed && codex_hooks_authorized(&codex_content)),
             path: codex_path.display().to_string(),
         },
         claude: WorkingLightHookInstallation {
             installed: claude_hooks_installed(&claude_settings)?,
+            authorized: None,
             path: claude_path.display().to_string(),
         },
         executable_path: executable_path.display().to_string(),
@@ -555,6 +572,52 @@ fn codex_hooks_installed(content: &str) -> AppResult<bool> {
         }
     }
     Ok(true)
+}
+
+fn codex_hooks_authorized(content: &str) -> bool {
+    CODEX_HOOK_SPECS
+        .iter()
+        .all(|spec| codex_hook_authorized(content, spec.name))
+}
+
+fn codex_hook_authorized(content: &str, hook_name: &str) -> bool {
+    let Some(event_name) = codex_hook_state_event_name(hook_name) else {
+        return false;
+    };
+    let event_marker = format!(":{event_name}:");
+    let mut lines = content.lines().peekable();
+
+    while let Some(line) = lines.next() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("[hooks.state.") || !trimmed.contains(&event_marker) {
+            continue;
+        }
+
+        while let Some(next_line) = lines.peek() {
+            let next_trimmed = next_line.trim();
+            if next_trimmed.starts_with('[') {
+                break;
+            }
+            if next_trimmed.starts_with("trusted_hash") && next_trimmed.contains("\"sha256:") {
+                return true;
+            }
+            lines.next();
+        }
+    }
+
+    false
+}
+
+fn codex_hook_state_event_name(hook_name: &str) -> Option<&'static str> {
+    match hook_name {
+        "UserPromptSubmit" => Some("user_prompt_submit"),
+        "PreToolUse" => Some("pre_tool_use"),
+        "PermissionRequest" => Some("permission_request"),
+        "Stop" => Some("stop"),
+        "SubagentStart" => Some("subagent_start"),
+        "SubagentStop" => Some("subagent_stop"),
+        _ => None,
+    }
 }
 
 fn claude_hooks_installed(settings: &Value) -> AppResult<bool> {

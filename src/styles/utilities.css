@@ -214,9 +214,86 @@
   color: oklch(0.48 0.1 75);
 }
 
+.working-light-hook-status.authorization {
+  border-color: oklch(0.78 0.09 80 / 0.4);
+  background: oklch(0.97 0.035 80 / 0.62);
+  color: oklch(0.42 0.09 75);
+}
+
+.working-light-hook-status.authorized {
+  border-color: oklch(0.72 0.15 155 / 0.35);
+  background: oklch(0.95 0.06 155 / 0.6);
+  color: oklch(0.42 0.12 155);
+}
+
 .working-light-hook-button {
   height: 32px;
   padding: 0 12px;
+  font-size: 12px;
+}
+
+.working-light-auth-guide {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+  margin: -10px 0 22px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+}
+
+.working-light-auth-guide-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.working-light-auth-guide-header span {
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: var(--font-weight-extrabold);
+}
+
+.working-light-auth-guide-header small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.working-light-auth-methods {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.working-light-auth-method {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.5;
+}
+
+.working-light-auth-method strong {
+  color: var(--color-primary-active);
+  font-size: 12px;
+  font-weight: var(--font-weight-extrabold);
+}
+
+.working-light-auth-method p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.working-light-auth-method code {
+  color: var(--color-text-strong);
   font-size: 12px;
 }
 
@@ -421,6 +498,10 @@
 
   .working-light-settings-controls {
     justify-content: flex-start;
+  }
+
+  .working-light-auth-methods {
+    grid-template-columns: 1fr;
   }
 
   .settings-about-header {

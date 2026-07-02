@@ -43,6 +43,9 @@ pub struct WorkingLightStateFile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkingLightPreferences {
+    #[serde(default = "default_window_enabled")]
+    pub window_enabled: bool,
+    #[serde(default)]
     pub muted: bool,
     pub done_auto_idle_seconds: u64,
     pub waiting_blink_seconds: u64,
@@ -69,6 +72,8 @@ pub struct WorkingLightDetection {
 #[serde(rename_all = "camelCase")]
 pub struct WorkingLightHookInstallation {
     pub installed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authorized: Option<bool>,
     pub path: String,
 }
 
@@ -147,6 +152,7 @@ impl Default for WorkingLightStateFile {
 impl Default for WorkingLightPreferences {
     fn default() -> Self {
         Self {
+            window_enabled: true,
             muted: false,
             done_auto_idle_seconds: 600,
             waiting_blink_seconds: 10,
@@ -154,6 +160,10 @@ impl Default for WorkingLightPreferences {
             claude_enabled: true,
         }
     }
+}
+
+fn default_window_enabled() -> bool {
+    true
 }
 
 fn default_agent_enabled() -> bool {

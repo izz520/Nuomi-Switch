@@ -27,6 +27,11 @@ pub fn working_light_set_muted(muted: bool) -> AppResult<WorkingLightPreferences
 }
 
 #[tauri::command]
+pub fn working_light_set_window_enabled(enabled: bool, app: AppHandle) -> AppResult<WorkingLightPreferences> {
+    working_light_service::set_window_enabled(&app, enabled)
+}
+
+#[tauri::command]
 pub fn working_light_set_agent_enabled(
     agent: WorkingLightAgent,
     enabled: bool,

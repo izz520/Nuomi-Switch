@@ -90,6 +90,7 @@ pub fn run() {
             commands::working_light::working_light_get_snapshot,
             commands::working_light::working_light_set_agent_state,
             commands::working_light::working_light_set_muted,
+            commands::working_light::working_light_set_window_enabled,
             commands::working_light::working_light_set_agent_enabled,
             commands::working_light::working_light_get_hook_status,
             commands::working_light::working_light_install_hooks,
