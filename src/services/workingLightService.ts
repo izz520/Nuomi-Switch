@@ -58,3 +58,7 @@ export function closeWorkingLightWindow(): Promise<void> {
 export function resizeWorkingLightWindow(visibleAgentCount: number): Promise<void> {
   return invokeCommand('working_light_resize_window', { visibleAgentCount });
 }
+
+export function activateWorkingLightAgent(agent: WorkingLightAgent): Promise<void> {
+  return invokeCommand('working_light_activate_agent', { agent });
+}

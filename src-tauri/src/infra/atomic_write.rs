@@ -25,26 +25,22 @@ pub fn write_atomic(path: &Path, content: &[u8]) -> AppResult<()> {
         let mut file = File::create(&temp_path).map_err(|err| {
             AppError::new(
                 "ATOMIC_WRITE_CREATE_FAILED",
-                format!(
-                    "创建临时文件 {} 失败：{}",
-                    temp_path.display(),
-                    err
-                ),
+                format!("创建临时文件 {} 失败：{}", temp_path.display(), err),
                 "请检查文件权限。",
             )
         })?;
         file.write_all(content).map_err(|err| {
             AppError::new(
                 "ATOMIC_WRITE_FAILED",
-            format!("写入临时文件 {} 失败：{}", temp_path.display(), err),
-            "请检查磁盘空间和文件权限。",
+                format!("写入临时文件 {} 失败：{}", temp_path.display(), err),
+                "请检查磁盘空间和文件权限。",
             )
         })?;
         file.sync_all().map_err(|err| {
             AppError::new(
                 "ATOMIC_WRITE_SYNC_FAILED",
-            format!("同步临时文件 {} 失败：{}", temp_path.display(), err),
-            "请检查磁盘状态。",
+                format!("同步临时文件 {} 失败：{}", temp_path.display(), err),
+                "请检查磁盘状态。",
             )
         })?;
     }
@@ -64,8 +60,10 @@ mod tests {
 
     #[test]
     fn writes_complete_content_to_target_file() {
-        let root =
-            std::env::temp_dir().join(format!("nuomi-switch-atomic-write-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!(
+            "nuomi-switch-atomic-write-{}",
+            uuid::Uuid::new_v4()
+        ));
         let target = root.join("nested").join("accounts.json");
 
         write_atomic(&target, br#"{"schemaVersion":"1.0.0"}"#)

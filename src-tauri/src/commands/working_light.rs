@@ -27,7 +27,10 @@ pub fn working_light_set_muted(muted: bool) -> AppResult<WorkingLightPreferences
 }
 
 #[tauri::command]
-pub fn working_light_set_window_enabled(enabled: bool, app: AppHandle) -> AppResult<WorkingLightPreferences> {
+pub fn working_light_set_window_enabled(
+    enabled: bool,
+    app: AppHandle,
+) -> AppResult<WorkingLightPreferences> {
     working_light_service::set_window_enabled(&app, enabled)
 }
 
@@ -67,4 +70,9 @@ pub fn working_light_close_window(app: AppHandle) -> AppResult<()> {
 #[tauri::command]
 pub fn working_light_resize_window(visible_agent_count: usize, app: AppHandle) -> AppResult<()> {
     working_light_service::resize_window_for_agent_count(&app, visible_agent_count)
+}
+
+#[tauri::command]
+pub fn working_light_activate_agent(agent: WorkingLightAgent) -> AppResult<()> {
+    working_light_service::activate_agent(agent)
 }

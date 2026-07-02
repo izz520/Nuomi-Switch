@@ -84,14 +84,21 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.48),
     inset 0 -1px 0 rgba(15, 23, 42, 0.04);
   color: inherit;
+  cursor: default;
+  font: inherit;
   text-align: left;
   user-select: none;
+  appearance: none;
   backdrop-filter: blur(28px) saturate(1.45);
   -webkit-backdrop-filter: blur(28px) saturate(1.45);
   transition:
     background 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.working-light-agent.clickable {
+  cursor: pointer;
 }
 
 .working-light-agent:hover {

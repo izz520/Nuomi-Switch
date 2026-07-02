@@ -83,7 +83,11 @@ pub fn default_codex_config_file() -> AppResult<PathBuf> {
 
 pub fn default_claude_desktop_dir() -> AppResult<PathBuf> {
     dirs::home_dir()
-        .map(|path| path.join("Library").join("Application Support").join("Claude"))
+        .map(|path| {
+            path.join("Library")
+                .join("Application Support")
+                .join("Claude")
+        })
         .ok_or_else(|| {
             AppError::new(
                 "HOME_DIR_UNAVAILABLE",

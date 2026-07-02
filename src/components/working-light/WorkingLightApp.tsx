@@ -1,6 +1,7 @@
 import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { startWindowDragging } from '../../services/windowService';
 import {
+  activateWorkingLightAgent,
   getWorkingLightSnapshot,
   resizeWorkingLightWindow,
 } from '../../services/workingLightService';
@@ -156,10 +157,17 @@ export function WorkingLightApp() {
     void startWindowDragging();
   }
 
+  const handleAgentActivate = useCallback(async (agent: WorkingLightAgent) => {
+    try {
+      await activateWorkingLightAgent(agent);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   return (
     <main
       className="working-light-shell"
-      data-tauri-drag-region
       onPointerDown={handleShellPointerDown}
     >
       <section className={`working-light-grid count-${Math.max(activeDetections.length, 1)}`} aria-label="工作状态">
@@ -172,6 +180,10 @@ export function WorkingLightApp() {
               label={detection.label}
               status={state.agents[detection.agent]}
               preferences={preferences}
+              onActivate={
+                detection.agent === 'codex' ? () => void handleAgentActivate(detection.agent) : undefined
+              }
+              onStartDrag={() => void startWindowDragging()}
             />
           ))
         )}

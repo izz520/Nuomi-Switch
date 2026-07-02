@@ -1,6 +1,6 @@
+use crate::infra::paths;
 use crate::models::account::{CodexAccountView, SwitchResult};
 use crate::models::error::AppResult;
-use crate::infra::paths;
 use crate::services::{account_service, codex_config_service, switch_service};
 
 #[tauri::command]

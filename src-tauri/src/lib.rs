@@ -98,6 +98,7 @@ pub fn run() {
             commands::working_light::working_light_hide_window,
             commands::working_light::working_light_close_window,
             commands::working_light::working_light_resize_window,
+            commands::working_light::working_light_activate_agent,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Nuomi Switch");

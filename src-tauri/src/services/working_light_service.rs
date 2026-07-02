@@ -15,6 +15,7 @@ use crate::models::working_light::{
     WorkingLightHookInstallation, WorkingLightHookStatus, WorkingLightPreferences,
     WorkingLightSnapshot, WorkingLightStateFile,
 };
+use crate::services::codex_app_service;
 
 const WINDOW_LABEL: &str = "working-light";
 const WINDOW_HEIGHT: f64 = 56.0;
@@ -236,33 +237,30 @@ pub fn show_window(app: &AppHandle) -> AppResult<()> {
     }
 
     let (x, y) = resolve_initial_position(app, DOUBLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT);
-    let window = WebviewWindowBuilder::new(
-        app,
-        WINDOW_LABEL,
-        WebviewUrl::App("index.html".into()),
-    )
-    .title("Nuomi Working Light")
-    .inner_size(DOUBLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
-    .min_inner_size(SINGLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
-    .max_inner_size(DOUBLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
-    .position(x, y)
-    .decorations(false)
-    .resizable(false)
-    .transparent(true)
-    .always_on_top(true)
-    .visible_on_all_workspaces(true)
-    .skip_taskbar(true)
-    .shadow(false)
-    .focused(false)
-    .visible(false)
-    .build()
-    .map_err(|error| {
-        AppError::new(
-            "WORKING_LIGHT_WINDOW_CREATE_FAILED",
-            format!("创建工作悬浮窗失败：{error}"),
-            "请重启应用后再试。",
-        )
-    })?;
+    let window = WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::App("index.html".into()))
+        .title("Nuomi Working Light")
+        .inner_size(DOUBLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
+        .min_inner_size(SINGLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
+        .max_inner_size(DOUBLE_AGENT_WINDOW_WIDTH, WINDOW_HEIGHT)
+        .position(x, y)
+        .decorations(false)
+        .resizable(false)
+        .transparent(true)
+        .always_on_top(true)
+        .visible_on_all_workspaces(true)
+        .skip_taskbar(true)
+        .shadow(false)
+        .focused(false)
+        .accept_first_mouse(true)
+        .visible(false)
+        .build()
+        .map_err(|error| {
+            AppError::new(
+                "WORKING_LIGHT_WINDOW_CREATE_FAILED",
+                format!("创建工作悬浮窗失败：{error}"),
+                "请重启应用后再试。",
+            )
+        })?;
 
     show_existing_window(&window)?;
     Ok(())
@@ -312,6 +310,17 @@ pub fn resize_window_for_agent_count(app: &AppHandle, visible_agent_count: usize
     Ok(())
 }
 
+pub fn activate_agent(agent: WorkingLightAgent) -> AppResult<()> {
+    match agent {
+        WorkingLightAgent::Codex => codex_app_service::activate_codex(),
+        WorkingLightAgent::Claude => Err(AppError::new(
+            "WORKING_LIGHT_AGENT_ACTIVATE_UNSUPPORTED",
+            "暂不支持从悬浮窗打开 Claude。",
+            "请手动打开 Claude。",
+        )),
+    }
+}
+
 pub fn decide_hook_state(
     agent: WorkingLightAgent,
     hook_name: &str,
@@ -320,12 +329,13 @@ pub fn decide_hook_state(
 ) -> (WorkingLightAgent, WorkingLightAgentState, String) {
     if hook_name == "Stop" {
         let assistant_text = extract_assistant_text(input);
-        let next_state =
-            if previous_state == WorkingLightAgentState::Waiting || looks_like_waiting_for_user(&assistant_text) {
-                WorkingLightAgentState::Waiting
-            } else {
-                WorkingLightAgentState::Done
-            };
+        let next_state = if previous_state == WorkingLightAgentState::Waiting
+            || looks_like_waiting_for_user(&assistant_text)
+        {
+            WorkingLightAgentState::Waiting
+        } else {
+            WorkingLightAgentState::Done
+        };
         return (agent, next_state, hook_name.to_string());
     }
 
@@ -458,15 +468,14 @@ fn install_claude_hooks() -> AppResult<()> {
     let path = paths::default_claude_cli_dir()?.join("settings.json");
     let original_content = fs::read_to_string(&path).ok();
     let mut settings = match fs::read_to_string(&path) {
-        Ok(content) if !content.trim().is_empty() => {
-            serde_json::from_str::<Value>(&content).map_err(|error| {
+        Ok(content) if !content.trim().is_empty() => serde_json::from_str::<Value>(&content)
+            .map_err(|error| {
                 AppError::new(
                     "WORKING_LIGHT_CLAUDE_SETTINGS_INVALID",
                     format!("解析 {} 失败：{error}", path.display()),
                     "请先修复 Claude settings.json 后再安装悬浮窗识别。",
                 )
-            })?
-        }
+            })?,
         _ => Value::Object(Map::new()),
     };
 
@@ -558,7 +567,10 @@ fn build_claude_hook_entry(spec: ClaudeHookSpec) -> AppResult<Value> {
     if let Some(matcher) = spec.matcher {
         entry.insert("matcher".to_string(), Value::String(matcher.to_string()));
     }
-    entry.insert("hooks".to_string(), Value::Array(vec![Value::Object(command)]));
+    entry.insert(
+        "hooks".to_string(),
+        Value::Array(vec![Value::Object(command)]),
+    );
     Ok(Value::Object(entry))
 }
 
@@ -622,7 +634,10 @@ fn codex_hook_state_event_name(hook_name: &str) -> Option<&'static str> {
 
 fn claude_hooks_installed(settings: &Value) -> AppResult<bool> {
     for spec in CLAUDE_HOOK_SPECS {
-        if !json_contains_text(settings, &hook_command(WorkingLightAgent::Claude, spec.name)?) {
+        if !json_contains_text(
+            settings,
+            &hook_command(WorkingLightAgent::Claude, spec.name)?,
+        ) {
             return Ok(false);
         }
     }
@@ -692,7 +707,8 @@ fn upsert_managed_block(content: &str, start: &str, end: &str, block: &str) -> S
         if let Some(end_relative) = content[start_index..].find(end) {
             let end_index = start_index + end_relative + end.len();
             let before = content[..start_index].trim_end();
-            let after = content[end_index..].trim_start_matches(|value| value == '\n' || value == '\r');
+            let after =
+                content[end_index..].trim_start_matches(|value| value == '\n' || value == '\r');
             let mut next = String::new();
             if !before.is_empty() {
                 next.push_str(before);
@@ -771,13 +787,15 @@ fn show_existing_window(window: &tauri::WebviewWindow) -> AppResult<()> {
         )
     })?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    window.set_visible_on_all_workspaces(true).map_err(|error| {
-        AppError::new(
-            "WORKING_LIGHT_WINDOW_WORKSPACE_FAILED",
-            format!("设置工作悬浮窗跨桌面显示失败：{error}"),
-            "请重新打开悬浮窗。",
-        )
-    })?;
+    window
+        .set_visible_on_all_workspaces(true)
+        .map_err(|error| {
+            AppError::new(
+                "WORKING_LIGHT_WINDOW_WORKSPACE_FAILED",
+                format!("设置工作悬浮窗跨桌面显示失败：{error}"),
+                "请重新打开悬浮窗。",
+            )
+        })?;
     window.show().map_err(|error| {
         AppError::new(
             "WORKING_LIGHT_WINDOW_SHOW_FAILED",
@@ -827,7 +845,10 @@ fn now_millis() -> i64 {
     chrono::Utc::now().timestamp_millis()
 }
 
-fn agent_status(state: &WorkingLightStateFile, agent: WorkingLightAgent) -> &WorkingLightAgentStatus {
+fn agent_status(
+    state: &WorkingLightStateFile,
+    agent: WorkingLightAgent,
+) -> &WorkingLightAgentStatus {
     match agent {
         WorkingLightAgent::Codex => &state.agents.codex,
         WorkingLightAgent::Claude => &state.agents.claude,
@@ -1196,16 +1217,31 @@ fn looks_like_waiting_for_user(text: &str) -> bool {
         "要不要",
         "行不行",
     ];
-    if direct_patterns.iter().any(|pattern| lower.contains(pattern)) {
+    if direct_patterns
+        .iter()
+        .any(|pattern| lower.contains(pattern))
+    {
         return true;
     }
 
     let action_words = [
-        "回复", "确认", "授权", "登录", "验证码", "文件", "截图", "选择", "提供", "补充",
-        "决定", "输入", "发我", "告诉我",
+        "回复",
+        "确认",
+        "授权",
+        "登录",
+        "验证码",
+        "文件",
+        "截图",
+        "选择",
+        "提供",
+        "补充",
+        "决定",
+        "输入",
+        "发我",
+        "告诉我",
     ];
-    let asks_for_action =
-        (lower.contains("需要") || lower.contains("请")) && action_words.iter().any(|word| lower.contains(word));
+    let asks_for_action = (lower.contains("需要") || lower.contains("请"))
+        && action_words.iter().any(|word| lower.contains(word));
     asks_for_action || lower.contains('?') || lower.contains('？')
 }
 
