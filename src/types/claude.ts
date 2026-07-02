@@ -14,6 +14,7 @@ export interface ClaudeAccountView {
   apiKey?: string | null;
   apiBaseUrl?: string | null;
   desktopProfileDir?: string | null;
+  desktopGatewayAuthScheme?: string | null;
   desktopGatewayModels?: string[] | null;
   desktopGatewayConnectionMode?: ClaudeDesktopGatewayConnectionMode | null;
   desktopGatewayUpstreamModels?: string[] | null;

@@ -88,6 +88,14 @@ function isClaudeRouteModel(value: string): boolean {
   return model.startsWith('claude-') || model.startsWith('anthropic/claude-');
 }
 
+function normalizeGatewayAuthScheme(value?: string | null): GatewayFormState['authScheme'] {
+  const normalized = value?.trim().toLowerCase().replace('_', '-');
+  if (normalized === 'x-api-key' || normalized === 'auto') {
+    return normalized;
+  }
+  return 'bearer';
+}
+
 function buildMappings(desktopModels: string[], upstreamModels: string[]): ClaudeDesktopGatewayModelMapping[] {
   const fallback = upstreamModels.find((model) => model.trim()) ?? '';
   return desktopModels
@@ -126,12 +134,16 @@ export function ClaudeApiKeyModal({
     if (!open) {
       return;
     }
+    const authScheme = normalizeGatewayAuthScheme(account?.desktopGatewayAuthScheme);
+    const apiBaseUrl = account?.apiBaseUrl ?? '';
+    const apiKey = account?.apiKey ?? '';
+    const hasSavedGatewayModels = Boolean(account?.desktopGatewayModels?.length || account?.desktopGatewayModelMappings?.length);
     setActiveTab('gateway');
     setGatewayForm({
       displayName: account?.displayName ?? '',
-      apiKey: account?.apiKey ?? '',
-      apiBaseUrl: account?.apiBaseUrl ?? '',
-      authScheme: 'bearer',
+      apiKey,
+      apiBaseUrl,
+      authScheme,
       connectionMode: account?.desktopGatewayConnectionMode ?? 'direct',
       modelsText: (account?.desktopGatewayModels?.length ? account.desktopGatewayModels : defaultDesktopModels).join('\n'),
     });
@@ -141,11 +153,11 @@ export function ClaudeApiKeyModal({
         : buildMappings(defaultDesktopModels, account?.desktopGatewayUpstreamModels ?? []),
     );
     setUpstreamModels(account?.desktopGatewayUpstreamModels ?? []);
-    setHasFetchedModels(Boolean(account?.desktopGatewayModels?.length || account?.desktopGatewayModelMappings?.length));
+    setHasFetchedModels(hasSavedGatewayModels);
     setShowApiKey(false);
     setModelsMessage(null);
     setModelsError(null);
-    lastModelFetchKey.current = '';
+    lastModelFetchKey.current = hasSavedGatewayModels ? `${apiBaseUrl}\n${apiKey}\n${authScheme}` : '';
   }, [account, open]);
 
   useEffect(() => {
@@ -476,7 +488,7 @@ export function ClaudeApiKeyModal({
                     </div>
                     <div className="claude-mapping-list">
                       {gatewayMappings.map((mapping, index) => (
-                        <div className="claude-mapping-row" key={`${mapping.desktopModel}-${index}`}>
+                        <div className="claude-mapping-row" key={`mapping-${index}`}>
                           <input
                             value={mapping.desktopModel}
                             onChange={(event) => updateMapping(index, { desktopModel: event.target.value })}
