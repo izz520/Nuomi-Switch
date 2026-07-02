@@ -107,14 +107,6 @@ pub fn ensure_gateway_for_account(
             )
         })?
         .port();
-    let listener = TcpListener::from_std(std_listener).map_err(|err| {
-        AppError::new(
-            "CLAUDE_GATEWAY_START_FAILED",
-            format!("初始化 Claude 本地网关失败：{}", err),
-            "请重试。",
-        )
-    })?;
-
     let local_api_key = format!("claude-local-{}", uuid::Uuid::new_v4());
     let endpoint = ClaudeDesktopLocalGatewayEndpoint {
         base_url: format!("http://{}:{}", GATEWAY_HOST, port),
@@ -123,6 +115,9 @@ pub fn ensure_gateway_for_account(
     let (shutdown, shutdown_rx) = oneshot::channel();
     let task_config = config.clone();
     let task = tauri::async_runtime::spawn(async move {
+        let Ok(listener) = TcpListener::from_std(std_listener) else {
+            return;
+        };
         run_gateway(listener, task_config, local_api_key, shutdown_rx).await;
     });
 

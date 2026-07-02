@@ -1194,13 +1194,50 @@ fn write_claude_cli_api_settings(account: &ClaudeAccount) -> AppResult<()> {
         )
     })?;
     let settings_path = cli_dir.join("settings.json");
-    let mut settings = serde_json::Map::new();
+    let connection_mode = normalize_gateway_connection_mode(
+        account
+            .desktop_gateway_connection_mode
+            .as_deref()
+            .unwrap_or("direct"),
+    );
+    let (api_key, base_url) = if connection_mode == "local_mapping" {
+        let endpoint = claude_desktop_gateway_service::ensure_gateway_for_account(account)?;
+        (endpoint.api_key, endpoint.base_url)
+    } else {
+        (
+            account.api_key.clone().unwrap_or_default(),
+            account.api_base_url.clone().unwrap_or_default(),
+        )
+    };
+    let mut settings = match fs::read_to_string(&settings_path) {
+        Ok(content) => serde_json::from_str::<serde_json::Value>(&content)
+            .ok()
+            .and_then(|value| value.as_object().cloned())
+            .unwrap_or_default(),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => serde_json::Map::new(),
+        Err(err) => {
+            return Err(AppError::new(
+                "CLAUDE_FILE_READ_FAILED",
+                format!("读取 {} 失败：{}", settings_path.display(), err),
+                "请检查文件权限后重试。",
+            ));
+        }
+    };
+    let mut env = settings
+        .remove("env")
+        .and_then(|value| value.as_object().cloned())
+        .unwrap_or_default();
+    env.insert(
+        "ANTHROPIC_API_KEY".to_string(),
+        serde_json::Value::String(api_key),
+    );
+    env.insert(
+        "ANTHROPIC_BASE_URL".to_string(),
+        serde_json::Value::String(base_url),
+    );
     settings.insert(
         "env".to_string(),
-        serde_json::json!({
-            "ANTHROPIC_API_KEY": account.api_key.clone().unwrap_or_default(),
-            "ANTHROPIC_BASE_URL": account.api_base_url.clone().unwrap_or_default(),
-        }),
+        serde_json::Value::Object(env),
     );
     let content =
         serde_json::to_vec_pretty(&serde_json::Value::Object(settings)).map_err(|err| {
