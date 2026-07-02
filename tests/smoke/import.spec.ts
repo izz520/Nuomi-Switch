@@ -175,14 +175,14 @@ test.describe('Import drawer smoke', () => {
     await expect(page.getByText('smoke.oauth@example.test')).toBeVisible();
   });
 
-  test('imports a ChatGPT session through the Session tab', async ({ page }) => {
+  test('imports a ChatGPT session through JSON text', async ({ page }) => {
     await installImportMock(page);
 
     await page.goto('/');
     await page.getByRole('button', { name: '添加 Codex 账号' }).first().click();
-    await page.getByRole('tab', { name: 'Session' }).click();
+    await page.getByRole('tab', { name: 'JSON 文本' }).click();
 
-    await page.getByPlaceholder('{"user":{"email":"mark@example.com"}').fill(
+    await page.getByPlaceholder('{"auth_mode":"oauth","tokens":{...}}').fill(
       JSON.stringify({
         user: {
           id: 'user_smoke',
@@ -226,10 +226,8 @@ test.describe('Import drawer smoke', () => {
     await expect(page.getByText(/CODEX_AUTH_INVALID_FORMAT/)).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await expect(page.getByRole('tab', { name: 'Token' })).toHaveCount(0);
-
-    await page.getByRole('tab', { name: 'Session' }).click();
-    await expect(page.getByPlaceholder('{"user":{"email":"mark@example.com"}')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Token' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Session' })).toHaveCount(0);
 
     await page.getByRole('tab', { name: 'JSON 文件' }).click();
     await expect(page.getByRole('button', { name: '选择 JSON' })).toBeVisible();

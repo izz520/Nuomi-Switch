@@ -474,6 +474,62 @@ export function convertChatGPTSessionTextToCodexJson(text: string): ChatGPTSessi
   };
 }
 
+function containsCodexAuthShape(value: unknown): boolean {
+  const visited = new WeakSet<object>();
+
+  function visit(item: unknown): boolean {
+    if (!isRecord(item) && !Array.isArray(item)) {
+      return false;
+    }
+
+    if (Array.isArray(item)) {
+      return item.some((child) => visit(child));
+    }
+
+    if (visited.has(item)) {
+      return false;
+    }
+    visited.add(item);
+
+    if (
+      typeof item.auth_mode === 'string' ||
+      typeof item.OPENAI_API_KEY === 'string' ||
+      typeof item.id_token === 'string' ||
+      typeof item.idToken === 'string' ||
+      typeof readPath(item, ['tokens', 'id_token']) === 'string' ||
+      typeof readPath(item, ['tokens', 'idToken']) === 'string'
+    ) {
+      return true;
+    }
+
+    return Object.entries(item).some(([key, child]) => {
+      if (key === 'accessToken' || key === 'access_token' || key === 'sessionToken' || key === 'session_token') {
+        return false;
+      }
+      return visit(child);
+    });
+  }
+
+  return visit(value);
+}
+
+export function isLikelyChatGPTSessionText(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (containsCodexAuthShape(parsed)) {
+      return false;
+    }
+    return collectSessionLikeObjects(parsed).length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function previewChatGPTSessionText(text: string): string {
   const trimmed = text.trim();
   if (trimmed.length === 0) {

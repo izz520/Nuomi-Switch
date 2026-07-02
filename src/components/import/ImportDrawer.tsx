@@ -3,7 +3,6 @@ import {
   Copy,
   ExternalLink,
   FileJson,
-  Fingerprint,
   FolderOpen,
   KeyRound,
   LockKeyhole,
@@ -14,7 +13,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo } from 'react';
 import { useCodexAccountsStore } from '../../stores/useCodexAccountsStore';
 import { type ImportSource, useImportFlowStore } from '../../stores/useImportFlowStore';
-import { previewChatGPTSessionText } from '../../services/chatgptSessionImport';
+import { isLikelyChatGPTSessionText, previewChatGPTSessionText } from '../../services/chatgptSessionImport';
 import { isOAuthAuthMode, type CodexAccountView } from '../../types/codex';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -43,10 +42,10 @@ const importSources: ImportSourceOption[] = [
     icon: <KeyRound size={16} />,
   },
   {
-    id: 'session',
-    label: 'Session',
-    description: '粘贴 ChatGPT session JSON',
-    icon: <Fingerprint size={16} />,
+    id: 'token',
+    label: 'Token',
+    description: '粘贴 Codex token',
+    icon: <KeyRound size={16} />,
   },
   {
     id: 'local',
@@ -63,7 +62,7 @@ const importSources: ImportSourceOption[] = [
   {
     id: 'jsonText',
     label: 'JSON 文本',
-    description: '粘贴授权 JSON 内容',
+    description: '粘贴授权 JSON 或 Session',
     icon: <TextCursorInput size={16} />,
   },
 ];
@@ -75,7 +74,11 @@ function fileName(filePath: string): string {
 function jsonTextPreview(jsonText: string): string {
   const trimmed = jsonText.trim();
   if (trimmed.length === 0) {
-    return '还没有粘贴 JSON 内容。';
+    return '还没有粘贴 JSON 内容。可粘贴 Codex 授权 JSON 或 ChatGPT Session JSON。';
+  }
+
+  if (isLikelyChatGPTSessionText(trimmed)) {
+    return previewChatGPTSessionText(trimmed);
   }
 
   try {
@@ -127,7 +130,6 @@ export function ImportDrawer() {
     selectingFiles,
     previewingBatch,
     jsonText,
-    sessionText,
     filePaths,
     batchPreview,
     batchSelectedItemIds,
@@ -138,7 +140,6 @@ export function ImportDrawer() {
     failedImports,
     error,
     setJsonText,
-    setSessionText,
     setTokenField,
     setApiKeyField,
     setOAuthCallbackUrl,
@@ -154,34 +155,39 @@ export function ImportDrawer() {
   } = useImportFlowStore();
   const upsertAccounts = useCodexAccountsStore((state) => state.upsertAccounts);
   const refreshAccountQuota = useCodexAccountsStore((state) => state.refreshAccountQuota);
+  const activeSource: ImportSource = source === 'session' ? 'oauth' : source;
+
+  useEffect(() => {
+    if (open && source === 'session') {
+      setSource('oauth');
+    }
+  }, [open, setSource, source]);
 
   const confirmDisabled = useMemo(() => {
     if (importing || selectingFiles || oauth.starting || oauth.submittingCallback || oauth.cancelling) {
       return true;
     }
-    if (source === 'jsonFile' || source === 'batchFiles') {
+    if (activeSource === 'jsonFile' || activeSource === 'batchFiles') {
       if (filePaths.length === 0 || previewingBatch) {
         return true;
       }
       return batchPreview !== null && batchSelectedItemIds.length === 0;
     }
-    if (source === 'jsonText') {
+    if (activeSource === 'jsonText') {
       return jsonText.trim().length === 0;
     }
-    if (source === 'session') {
-      return sessionText.trim().length === 0;
-    }
-    if (source === 'token') {
+    if (activeSource === 'token') {
       return tokenFields.idToken.trim().length === 0 || tokenFields.accessToken.trim().length === 0;
     }
-    if (source === 'apiKey') {
+    if (activeSource === 'apiKey') {
       return apiKeyFields.apiKey.trim().length === 0;
     }
-    if (source === 'oauth') {
+    if (activeSource === 'oauth') {
       return oauth.login === null || oauth.step !== 'callbackSubmitted';
     }
     return false;
   }, [
+    activeSource,
     apiKeyFields.apiKey,
     filePaths.length,
     importing,
@@ -193,8 +199,6 @@ export function ImportDrawer() {
     oauth.submittingCallback,
     previewingBatch,
     selectingFiles,
-    sessionText,
-    source,
     batchPreview,
     batchSelectedItemIds.length,
     tokenFields.accessToken,
@@ -225,7 +229,7 @@ export function ImportDrawer() {
   }
 
   useEffect(() => {
-    if (!open || source !== 'oauth' || !oauth.login || oauth.step !== 'started' || importing) {
+    if (!open || activeSource !== 'oauth' || !oauth.login || oauth.step !== 'started' || importing) {
       return undefined;
     }
 
@@ -246,19 +250,19 @@ export function ImportDrawer() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [importing, oauth.login, oauth.step, open, pollOAuthLoginStatus, source]);
+  }, [activeSource, importing, oauth.login, oauth.step, open, pollOAuthLoginStatus]);
 
   useEffect(() => {
-    if (open && source === 'oauth' && oauth.step === 'completed' && resultAccounts.length > 0) {
+    if (open && activeSource === 'oauth' && oauth.step === 'completed' && resultAccounts.length > 0) {
       finalizeSuccessfulAdd(resultAccounts);
     }
-  }, [oauth.step, open, resultAccounts, source]);
+  }, [activeSource, oauth.step, open, resultAccounts]);
 
   if (!open) {
     return null;
   }
 
-  const selectedSource = importSources.find((item) => item.id === source) ?? importSources[0];
+  const selectedSource = importSources.find((item) => item.id === activeSource) ?? importSources[0];
 
   return (
     <div className="drawer-backdrop" role="presentation">
@@ -270,9 +274,9 @@ export function ImportDrawer() {
 
         <div className="drawer-body">
           <section
-            aria-labelledby={`import-source-tab-${source}`}
+            aria-labelledby={`import-source-tab-${activeSource}`}
             className="import-workspace"
-            id={`import-panel-${source}`}
+            id={`import-panel-${activeSource}`}
             role="tabpanel"
           >
             <div className="codex-source-tabs" role="tablist" aria-label="账号来源">
@@ -280,8 +284,8 @@ export function ImportDrawer() {
                 <button
                   aria-controls={`import-panel-${item.id}`}
                   aria-label={item.label}
-                  aria-selected={source === item.id}
-                  className={`codex-source-tab ${source === item.id ? 'active' : ''}`}
+                  aria-selected={activeSource === item.id}
+                  className={`codex-source-tab ${activeSource === item.id ? 'active' : ''}`}
                   id={`import-source-tab-${item.id}`}
                   key={item.id}
                   role="tab"
@@ -308,14 +312,14 @@ export function ImportDrawer() {
             </div>
 
             <div className="import-form-area">
-              {source === 'local' ? (
+              {activeSource === 'local' ? (
                 <div className="local-auth-panel">
                   <span>Nuomi Switch 会读取当前本地授权文件，并添加到本地账号列表。</span>
                   <code>~/.codex/auth.json</code>
                 </div>
               ) : null}
 
-              {source === 'jsonFile' || source === 'batchFiles' ? (
+              {activeSource === 'jsonFile' || activeSource === 'batchFiles' ? (
                 <div className="import-field-group">
                   <div className="file-actions">
                     <Button variant="secondary" loading={selectingFiles} icon={<FileJson size={16} />} onClick={chooseFiles}>
@@ -343,46 +347,20 @@ export function ImportDrawer() {
                 </div>
               ) : null}
 
-              {source === 'jsonText' ? (
+              {activeSource === 'jsonText' ? (
                 <label className="import-field">
                   <span>授权 JSON</span>
                   <textarea
                     rows={9}
                     spellCheck={false}
                     value={jsonText}
-                    placeholder='{"auth_mode":"oauth","tokens":{...}} or [{"id_token":"..."}] or {"type":"sub2api-data","accounts":[...]}'
+                    placeholder='{"auth_mode":"oauth","tokens":{...}} 或 {"user":{"email":"..."},"account":{"id":"..."},"accessToken":"..."}'
                     onChange={(event) => setJsonText(event.target.value)}
                   />
                 </label>
               ) : null}
 
-              {source === 'session' ? (
-                <div className="import-field-group">
-                  <div className="session-import-guide">
-                    <strong>ChatGPT Session</strong>
-                    <p>
-                      先在浏览器登录 ChatGPT，然后打开{' '}
-                      <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">
-                        https://chatgpt.com/api/auth/session
-                      </a>
-                      ，复制整段 JSON。
-                    </p>
-                    <p>Session 通常没有 refresh_token，导入后 access token 过期就需要重新导入或改用 OAuth 登录。</p>
-                  </div>
-                  <label className="import-field">
-                    <span>Session JSON</span>
-                    <textarea
-                      rows={10}
-                      spellCheck={false}
-                      value={sessionText}
-                      placeholder='{"user":{"email":"mark@example.com"},"expires":"2026-08-06T14:29:36.155Z","account":{"id":"...","planType":"plus"},"accessToken":"...","sessionToken":"..."}'
-                      onChange={(event) => setSessionText(event.target.value)}
-                    />
-                  </label>
-                </div>
-              ) : null}
-
-              {source === 'token' ? (
+              {activeSource === 'token' ? (
                 <div className="import-field-group">
                   <label className="import-field">
                     <span>ID token</span>
@@ -415,7 +393,7 @@ export function ImportDrawer() {
                 </div>
               ) : null}
 
-              {source === 'apiKey' ? (
+              {activeSource === 'apiKey' ? (
                 <div className="import-field-group">
                   <label className="import-field">
                     <span>API Key</span>
@@ -444,7 +422,7 @@ export function ImportDrawer() {
                 </div>
               ) : null}
 
-              {source === 'oauth' ? (
+              {activeSource === 'oauth' ? (
                 <OAuthLoginPanel
                   callbackUrl={oauth.callbackUrl}
                   cancelling={oauth.cancelling}
@@ -464,7 +442,7 @@ export function ImportDrawer() {
             <section className="drawer-preview" aria-labelledby="import-preview-title">
               <h3 id="import-preview-title">导入预览</h3>
               {resultAccounts.length === 0 && failedImports.length === 0 ? (
-                  <PreviewHint source={source} jsonText={jsonText} sessionText={sessionText} filePaths={filePaths} />
+                  <PreviewHint source={activeSource} jsonText={jsonText} filePaths={filePaths} />
               ) : null}
               {resultAccounts.length > 0 || failedImports.length > 0 ? (
                 <p className="import-summary">
@@ -522,17 +500,12 @@ export function ImportDrawer() {
 interface PreviewHintProps {
   source: ImportSource;
   jsonText: string;
-  sessionText: string;
   filePaths: string[];
 }
 
-function PreviewHint({ source, jsonText, sessionText, filePaths }: PreviewHintProps) {
+function PreviewHint({ source, jsonText, filePaths }: PreviewHintProps) {
   if (source === 'jsonText') {
     return <p className="muted">{jsonTextPreview(jsonText)}</p>;
-  }
-
-  if (source === 'session') {
-    return <p className="muted">{previewChatGPTSessionText(sessionText)}</p>;
   }
 
   if (source === 'jsonFile' || source === 'batchFiles') {

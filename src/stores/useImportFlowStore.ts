@@ -14,7 +14,7 @@ import {
   startCodexOAuthLogin,
   submitCodexOAuthCallbackUrl,
 } from '../services/codexImportService';
-import { convertChatGPTSessionTextToCodexJson } from '../services/chatgptSessionImport';
+import { convertChatGPTSessionTextToCodexJson, isLikelyChatGPTSessionText } from '../services/chatgptSessionImport';
 import type { CodexAccountView } from '../types/codex';
 import type { BatchImportSession, ImportResult, OAuthStartResult } from '../types/import';
 import type { AppError } from '../types/system';
@@ -206,6 +206,26 @@ function defaultBatchSelection(session: BatchImportSession): string[] {
 
 function shouldCloseAfterSuccessfulImport(result: ImportResult): boolean {
   return result.imported.length > 0 && result.failed.length === 0;
+}
+
+async function importJsonTextOrSession(jsonText: string): Promise<ImportResult> {
+  const trimmed = jsonText.trim();
+
+  if (isLikelyChatGPTSessionText(trimmed)) {
+    const converted = convertChatGPTSessionTextToCodexJson(trimmed);
+    return importCodexFromJson(converted.jsonContent);
+  }
+
+  try {
+    return await importCodexFromJson(trimmed);
+  } catch (jsonError) {
+    try {
+      const converted = convertChatGPTSessionTextToCodexJson(trimmed);
+      return await importCodexFromJson(converted.jsonContent);
+    } catch {
+      throw jsonError;
+    }
+  }
 }
 
 function emptyImportDraft() {
@@ -589,7 +609,7 @@ export const useImportFlowStore = create<ImportFlowState>((set) => ({
         if (validationError) {
           throw validationError;
         }
-        result = await importCodexFromJson(state.jsonText.trim());
+        result = await importJsonTextOrSession(state.jsonText);
       } else {
         throw appError('IMPORT_SOURCE_UNSUPPORTED', 'Import source is not supported.', 'Choose another import source.');
       }
