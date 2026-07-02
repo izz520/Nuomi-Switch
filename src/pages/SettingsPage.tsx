@@ -17,7 +17,13 @@ import {
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useUpdateStore } from '../stores/useUpdateStore';
 import type { AppSettings, SystemSnapshot } from '../types/system';
-import type { WorkingLightAgent, WorkingLightHookStatus, WorkingLightPreferences } from '../types/workingLight';
+import {
+  WORKING_LIGHT_STATE_LABELS,
+  type WorkingLightAgent,
+  type WorkingLightAgentState,
+  type WorkingLightHookStatus,
+  type WorkingLightPreferences,
+} from '../types/workingLight';
 
 const pathRows: Array<{ label: string; key: keyof SystemSnapshot }> = [
   { label: '应用数据', key: 'appDataDir' },
@@ -39,6 +45,7 @@ const settingsTabs: Tab[] = [
 
 const projectUrl = 'https://github.com/izz520/Nuomi-Switch';
 const authorUrl = 'https://github.com/izz520';
+const workingLightStateDemoStates: WorkingLightAgentState[] = ['idle', 'working', 'done', 'waiting', 'error'];
 
 export function SettingsPage() {
   const {
@@ -385,6 +392,23 @@ export function SettingsPage() {
                   {workingLightHookStatus?.claude.installed ? '重新安装识别' : '安装识别'}
                 </Button>
               </div>
+            </div>
+          </div>
+          <div className="working-light-state-demo" aria-label="Working Light 状态预览">
+            <div className="working-light-state-demo-header">
+              <span>状态预览</span>
+              <small>仅展示样式，不会改变真实悬浮窗状态。</small>
+            </div>
+            <div className="working-light-state-demo-grid">
+              {workingLightStateDemoStates.map((state) => (
+                <div className={`working-light-state-demo-card ${state}`} key={state}>
+                  <span className={`working-light-state-demo-bulb ${state}`} aria-hidden="true" />
+                  <span className="working-light-state-demo-copy">
+                    <strong>Codex</strong>
+                    <span>{WORKING_LIGHT_STATE_LABELS[state]}</span>
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
           {codexNeedsAuthorization ? (

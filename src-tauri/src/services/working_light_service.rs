@@ -325,13 +325,11 @@ pub fn decide_hook_state(
     agent: WorkingLightAgent,
     hook_name: &str,
     input: &Value,
-    previous_state: WorkingLightAgentState,
+    _previous_state: WorkingLightAgentState,
 ) -> (WorkingLightAgent, WorkingLightAgentState, String) {
     if hook_name == "Stop" {
         let assistant_text = extract_assistant_text(input);
-        let next_state = if previous_state == WorkingLightAgentState::Waiting
-            || looks_like_waiting_for_user(&assistant_text)
-        {
+        let next_state = if looks_like_waiting_for_user(&assistant_text) {
             WorkingLightAgentState::Waiting
         } else {
             WorkingLightAgentState::Done
@@ -1146,14 +1144,46 @@ fn extract_assistant_text(input: &Value) -> String {
         "lastAssistantMessage",
         "last_assistant_message",
         "assistantMessage",
-        "prompt",
+        "assistant_message",
         "message",
-        "messages",
-        "transcript",
+        "response",
+        "output",
+        "result",
     ] {
         collect_strings(input.get(key).unwrap_or(&Value::Null), &mut strings, 0);
     }
+    collect_latest_assistant_message_strings(
+        input.get("messages").unwrap_or(&Value::Null),
+        &mut strings,
+    );
     strings.join("\n")
+}
+
+fn collect_latest_assistant_message_strings(value: &Value, bucket: &mut Vec<String>) {
+    let Some(messages) = value.as_array() else {
+        return;
+    };
+
+    for message in messages.iter().rev() {
+        let Some(object) = message.as_object() else {
+            continue;
+        };
+        let role = object
+            .get("role")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_lowercase();
+        if role != "assistant" {
+            continue;
+        }
+
+        for key in ["message", "content", "text"] {
+            if let Some(value) = object.get(key) {
+                collect_strings(value, bucket, 0);
+            }
+        }
+        return;
+    }
 }
 
 fn collect_strings(value: &Value, bucket: &mut Vec<String>, depth: usize) {
@@ -1195,12 +1225,20 @@ fn looks_like_waiting_for_user(text: &str) -> bool {
     let lower = text.to_lowercase();
     let direct_patterns = [
         "需要你确认",
-        "等你回复",
+        "需要你授权",
+        "需要你登录",
+        "需要你选择",
+        "请你确认",
+        "请你授权",
+        "请你登录",
+        "请你选择",
+        "请回复",
         "请选择",
         "请告诉我",
+        "请提供",
+        "请补充",
+        "请发我",
         "你想用哪个",
-        "approval",
-        "permission",
         "waitingonuserinput",
         "waiting on user input",
         "waiting for user",
@@ -1208,11 +1246,11 @@ fn looks_like_waiting_for_user(text: &str) -> bool {
         "input required",
         "requestuserinputquestionoption",
         "request user input",
-        "which option",
-        "choose",
-        "reply",
-        "confirm",
-        "是否",
+        "which option would you like",
+        "please choose",
+        "please confirm",
+        "please reply",
+        "please provide",
         "可以吗",
         "要不要",
         "行不行",
@@ -1240,9 +1278,36 @@ fn looks_like_waiting_for_user(text: &str) -> bool {
         "发我",
         "告诉我",
     ];
-    let asks_for_action = (lower.contains("需要") || lower.contains("请"))
+    let asks_for_action = (lower.contains("需要你")
+        || lower.contains("请你")
+        || lower.contains("请 ")
+        || lower.contains("please ")
+        || lower.contains("麻烦你"))
         && action_words.iter().any(|word| lower.contains(word));
-    asks_for_action || lower.contains('?') || lower.contains('？')
+    asks_for_action || looks_like_user_directed_question(&lower)
+}
+
+fn looks_like_user_directed_question(lower: &str) -> bool {
+    let trimmed = lower.trim_end();
+    if !(trimmed.ends_with('?') || trimmed.ends_with('？')) {
+        return false;
+    }
+
+    [
+        "你想",
+        "你要",
+        "你希望",
+        "是否要",
+        "要不要",
+        "可以吗",
+        "行不行",
+        "which",
+        "would you",
+        "do you want",
+        "should i",
+    ]
+    .iter()
+    .any(|pattern| lower.contains(pattern))
 }
 
 fn format_status(snapshot: WorkingLightSnapshot) -> String {
@@ -1252,4 +1317,89 @@ fn format_status(snapshot: WorkingLightSnapshot) -> String {
         "codex: {codex}\nclaude: {claude}\nmuted: {}",
         snapshot.preferences.muted
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn stop_after_previous_waiting_resolves_to_done_when_response_is_complete() {
+        let input = json!({
+            "lastAssistantMessage": "已完成。验证已通过。"
+        });
+
+        let (_, state, _) = decide_hook_state(
+            WorkingLightAgent::Codex,
+            "Stop",
+            &input,
+            WorkingLightAgentState::Waiting,
+        );
+
+        assert_eq!(state, WorkingLightAgentState::Done);
+    }
+
+    #[test]
+    fn stop_resolves_to_done_when_response_only_mentions_waiting_status_label() {
+        let input = json!({
+            "lastAssistantMessage": "已修复，不会再把完成状态误显示成等你回复。"
+        });
+
+        let (_, state, _) = decide_hook_state(
+            WorkingLightAgent::Codex,
+            "Stop",
+            &input,
+            WorkingLightAgentState::Working,
+        );
+
+        assert_eq!(state, WorkingLightAgentState::Done);
+    }
+
+    #[test]
+    fn stop_ignores_user_prompt_when_deciding_final_state() {
+        let input = json!({
+            "prompt": "明明已经完成了，为什么还显示等你回复？",
+            "lastAssistantMessage": "已修复。"
+        });
+
+        let (_, state, _) = decide_hook_state(
+            WorkingLightAgent::Codex,
+            "Stop",
+            &input,
+            WorkingLightAgentState::Working,
+        );
+
+        assert_eq!(state, WorkingLightAgentState::Done);
+    }
+
+    #[test]
+    fn stop_resolves_to_waiting_when_final_response_requests_user_input() {
+        let input = json!({
+            "lastAssistantMessage": "请选择一个方案后回复我。"
+        });
+
+        let (_, state, _) = decide_hook_state(
+            WorkingLightAgent::Codex,
+            "Stop",
+            &input,
+            WorkingLightAgentState::Working,
+        );
+
+        assert_eq!(state, WorkingLightAgentState::Waiting);
+    }
+
+    #[test]
+    fn permission_request_resolves_to_waiting() {
+        let input = json!({});
+
+        let (_, state, _) = decide_hook_state(
+            WorkingLightAgent::Codex,
+            "PermissionRequest",
+            &input,
+            WorkingLightAgentState::Working,
+        );
+
+        assert_eq!(state, WorkingLightAgentState::Waiting);
+    }
 }
