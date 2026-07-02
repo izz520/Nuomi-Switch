@@ -162,6 +162,64 @@
   transform: translateX(18px);
 }
 
+.working-light-settings-row {
+  grid-template-columns: 120px minmax(0, 1fr);
+}
+
+.working-light-settings-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.working-light-switch-label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.working-light-switch-label span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-extrabold);
+}
+
+.working-light-hook-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-control);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-extrabold);
+  white-space: nowrap;
+}
+
+.working-light-hook-status.installed {
+  border-color: oklch(0.72 0.15 155 / 0.4);
+  background: oklch(0.94 0.08 155 / 0.78);
+  color: oklch(0.43 0.13 155);
+}
+
+.working-light-hook-status.missing {
+  border-color: oklch(0.78 0.09 80 / 0.45);
+  background: oklch(0.96 0.04 80 / 0.78);
+  color: oklch(0.48 0.1 75);
+}
+
+.working-light-hook-button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
 .settings-link-button {
   display: inline-flex;
   align-items: center;
@@ -359,6 +417,10 @@
   .settings-row {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .working-light-settings-controls {
+    justify-content: flex-start;
   }
 
   .settings-about-header {

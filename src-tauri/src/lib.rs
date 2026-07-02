@@ -87,7 +87,35 @@ pub fn run() {
             commands::system::get_log_snapshot,
             commands::system::get_system_snapshot,
             commands::window::window_start_dragging,
+            commands::working_light::working_light_get_snapshot,
+            commands::working_light::working_light_set_agent_state,
+            commands::working_light::working_light_set_muted,
+            commands::working_light::working_light_set_agent_enabled,
+            commands::working_light::working_light_get_hook_status,
+            commands::working_light::working_light_install_hooks,
+            commands::working_light::working_light_show_window,
+            commands::working_light::working_light_hide_window,
+            commands::working_light::working_light_close_window,
+            commands::working_light::working_light_resize_window,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Nuomi Switch");
+}
+
+pub fn try_run_working_light_cli() -> bool {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    match services::working_light_service::run_cli(&args) {
+        Ok(Some(output)) => {
+            if !output.is_empty() {
+                println!("{output}");
+            }
+            true
+        }
+        Ok(None) => false,
+        Err(error) => {
+            eprintln!("{}: {}", error.code, error.message);
+            eprintln!("{}", error.action);
+            std::process::exit(1);
+        }
+    }
 }

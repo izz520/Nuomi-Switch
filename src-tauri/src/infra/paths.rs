@@ -47,6 +47,14 @@ pub fn settings_file_path() -> AppResult<PathBuf> {
     Ok(app_data_dir()?.join("settings.json"))
 }
 
+pub fn working_light_state_file_path() -> AppResult<PathBuf> {
+    Ok(app_data_dir()?.join("working_light_state.json"))
+}
+
+pub fn working_light_preferences_file_path() -> AppResult<PathBuf> {
+    Ok(app_data_dir()?.join("working_light_preferences.json"))
+}
+
 pub fn default_codex_home() -> AppResult<PathBuf> {
     if let Ok(path) = std::env::var(CODEX_HOME_ENV) {
         if !path.trim().is_empty() {

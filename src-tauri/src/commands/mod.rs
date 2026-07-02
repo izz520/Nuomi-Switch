@@ -7,3 +7,4 @@ pub mod session;
 pub mod settings;
 pub mod system;
 pub mod window;
+pub mod working_light;
