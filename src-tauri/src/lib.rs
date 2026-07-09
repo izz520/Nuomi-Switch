@@ -3,8 +3,13 @@ mod infra;
 mod models;
 mod services;
 
+#[cfg(target_os = "macos")]
+use tauri::Manager;
+
 #[cfg(test)]
 mod test_support;
+
+const MAIN_WINDOW_LABEL: &str = "main";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,6 +22,16 @@ pub fn run() {
 
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.on_window_event(|window, event| {
+        if window.label() == MAIN_WINDOW_LABEL {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        }
+    });
 
     builder
         .setup(|app| {
@@ -100,8 +115,25 @@ pub fn run() {
             commands::working_light::working_light_resize_window,
             commands::working_light::working_light_activate_agent,
         ])
-        .run(tauri::generate_context!())
-        .expect("failed to run Nuomi Switch");
+        .build(tauri::generate_context!())
+        .expect("failed to build Nuomi Switch")
+        .run(|app_handle, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                show_main_window(app_handle);
+            }
+        });
+}
+
+#[cfg(target_os = "macos")]
+fn show_main_window(app_handle: &tauri::AppHandle) {
+    let Some(window) = app_handle.get_webview_window(MAIN_WINDOW_LABEL) else {
+        return;
+    };
+
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
 }
 
 pub fn try_run_working_light_cli() -> bool {
