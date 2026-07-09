@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use crate::models::account::{CodexAccount, CodexAuthMode, TokenBundle};
@@ -65,11 +66,90 @@ fn read_string_path(value: &serde_json::Value, path: &[&str]) -> Option<String> 
         .map(ToString::to_string)
 }
 
+fn encode_jwt_part(value: &serde_json::Value) -> String {
+    URL_SAFE_NO_PAD.encode(value.to_string())
+}
+
+fn synthetic_id_token_from_portable_value(
+    value: &serde_json::Value,
+    access_token: &str,
+    account_id: Option<&str>,
+) -> Option<String> {
+    let access_payload = decode_jwt_payload(access_token).ok();
+    let account_id = account_id
+        .map(ToString::to_string)
+        .or_else(|| extract_account_id_from_payload(access_payload.as_ref()))?;
+    let email = read_string_path(value, &["email"])
+        .or_else(|| read_string_path(value, &["credentials", "email"]))
+        .or_else(|| {
+            access_payload
+                .as_ref()
+                .and_then(|payload| trim_optional_ref(payload.email.as_deref()))
+        })
+        .or_else(|| {
+            access_payload.as_ref().and_then(|payload| {
+                payload
+                    .profile_data
+                    .as_ref()
+                    .and_then(|profile| trim_optional_ref(profile.email.as_deref()))
+            })
+        });
+    let user_id = read_string_path(value, &["user_id"])
+        .or_else(|| read_string_path(value, &["userId"]))
+        .or_else(|| read_string_path(value, &["chatgpt_user_id"]))
+        .or_else(|| read_string_path(value, &["chatgptUserId"]))
+        .or_else(|| read_string_path(value, &["credentials", "user_id"]))
+        .or_else(|| read_string_path(value, &["credentials", "userId"]))
+        .or_else(|| read_string_path(value, &["credentials", "chatgpt_user_id"]))
+        .or_else(|| read_string_path(value, &["credentials", "chatgptUserId"]))
+        .or_else(|| {
+            access_payload.as_ref().and_then(|payload| {
+                payload
+                    .auth_data
+                    .as_ref()
+                    .and_then(|auth_data| trim_optional_ref(auth_data.chatgpt_user_id.as_deref()))
+                    .or_else(|| trim_optional_ref(payload.sub.as_deref()))
+            })
+        });
+    let plan_type = read_string_path(value, &["plan_type"])
+        .or_else(|| read_string_path(value, &["planType"]))
+        .or_else(|| read_string_path(value, &["credentials", "plan_type"]))
+        .or_else(|| read_string_path(value, &["credentials", "planType"]))
+        .or_else(|| extract_plan_type_from_payload(access_payload.as_ref()));
+    let exp = access_payload
+        .as_ref()
+        .and_then(|payload| payload.exp)
+        .unwrap_or_else(|| chrono::Utc::now().timestamp() + 90 * 24 * 60 * 60);
+
+    let mut auth_info = json!({
+        "chatgpt_account_id": account_id,
+        "account_id": account_id,
+    });
+    if let Some(plan_type) = plan_type {
+        auth_info["chatgpt_plan_type"] = json!(plan_type);
+    }
+    if let Some(user_id) = user_id {
+        auth_info["chatgpt_user_id"] = json!(user_id);
+        auth_info["user_id"] = json!(user_id);
+    }
+
+    let mut payload = json!({
+        "iat": chrono::Utc::now().timestamp(),
+        "exp": exp,
+        "https://api.openai.com/auth": auth_info,
+    });
+    if let Some(email) = email {
+        payload["email"] = json!(email);
+    }
+
+    Some(format!(
+        "{}.{}.synthetic",
+        encode_jwt_part(&json!({ "alg": "none", "typ": "JWT", "nuomi_synthetic": true })),
+        encode_jwt_part(&payload)
+    ))
+}
+
 fn auth_from_portable_value(value: &serde_json::Value) -> Option<CodexAuthFile> {
-    let id_token = read_string_path(value, &["id_token"])
-        .or_else(|| read_string_path(value, &["idToken"]))
-        .or_else(|| read_string_path(value, &["credentials", "id_token"]))
-        .or_else(|| read_string_path(value, &["credentials", "idToken"]))?;
     let access_token = read_string_path(value, &["access_token"])
         .or_else(|| read_string_path(value, &["accessToken"]))
         .or_else(|| read_string_path(value, &["credentials", "access_token"]))
@@ -87,6 +167,13 @@ fn auth_from_portable_value(value: &serde_json::Value) -> Option<CodexAuthFile> 
         .or_else(|| read_string_path(value, &["credentials", "account_id"]))
         .or_else(|| read_string_path(value, &["credentials", "accountId"]))
         .or_else(|| read_string_path(value, &["credentials", "chatgpt_account_id"]));
+    let id_token = read_string_path(value, &["id_token"])
+        .or_else(|| read_string_path(value, &["idToken"]))
+        .or_else(|| read_string_path(value, &["credentials", "id_token"]))
+        .or_else(|| read_string_path(value, &["credentials", "idToken"]))
+        .or_else(|| {
+            synthetic_id_token_from_portable_value(value, &access_token, account_id.as_deref())
+        })?;
 
     Some(CodexAuthFile {
         auth_mode: Some("oauth".to_string()),
@@ -767,6 +854,56 @@ mod tests {
             sub2api_accounts[0].email.as_deref(),
             Some("sub2api@example.test")
         );
+    }
+
+    #[test]
+    fn imports_sub2api_account_without_type_or_id_token() {
+        let access_token = make_jwt(serde_json::json!({
+            "https://api.openai.com/auth": {
+                "chatgpt_user_id": "user_sub2api_access",
+                "chatgpt_account_id": "acct_sub2api_access",
+                "chatgpt_plan_type": "k12"
+            },
+            "https://api.openai.com/profile": {
+                "email": "sub2api-access@example.test"
+            },
+            "exp": 1784475741
+        }));
+        let sub2api_payload = serde_json::json!({
+            "exported_at": "2026-07-09T15:42:22+00:00",
+            "proxies": [],
+            "accounts": [
+                {
+                    "name": "sub2api-access@example.test",
+                    "platform": "openai",
+                    "type": "oauth",
+                    "credentials": {
+                        "access_token": access_token,
+                        "chatgpt_account_id": "acct_sub2api_access",
+                        "client_id": "app_fixture",
+                        "expires_at": 1784475741,
+                        "plan_type": "k12",
+                        "refresh_token": ""
+                    }
+                }
+            ]
+        });
+
+        let accounts = accounts_from_auth_json(&sub2api_payload.to_string())
+            .expect("sub2api export without id_token should import");
+
+        assert_eq!(accounts.len(), 1);
+        assert_eq!(accounts[0].display_name, "sub2api-access@example.test");
+        assert_eq!(
+            accounts[0].email.as_deref(),
+            Some("sub2api-access@example.test")
+        );
+        assert_eq!(
+            accounts[0].account_id.as_deref(),
+            Some("acct_sub2api_access")
+        );
+        assert_eq!(accounts[0].plan_type.as_deref(), Some("k12"));
+        assert!(accounts[0].token_bundle.is_some());
     }
 
     #[test]
