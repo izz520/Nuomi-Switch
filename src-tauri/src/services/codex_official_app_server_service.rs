@@ -8,7 +8,10 @@ use serde_json::{json, Value as JsonValue};
 
 use crate::models::error::{AppError, AppResult};
 
-const CODEX_APP_SERVER_EXECUTABLE: &str = "/Applications/Codex.app/Contents/Resources/codex";
+const OFFICIAL_APP_SERVER_EXECUTABLES: &[&str] = &[
+    "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "/Applications/Codex.app/Contents/Resources/codex",
+];
 const CODEX_APP_SERVER_EXECUTABLE_ENV: &str = "CODEX_APP_SERVER_EXECUTABLE";
 const APP_SERVER_RESPONSE_TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -114,7 +117,7 @@ fn official_app_server_executable() -> AppResult<PathBuf> {
             candidates.push(PathBuf::from(executable));
         }
     }
-    candidates.push(PathBuf::from(CODEX_APP_SERVER_EXECUTABLE));
+    candidates.extend(OFFICIAL_APP_SERVER_EXECUTABLES.iter().map(PathBuf::from));
 
     for executable in &candidates {
         if executable.exists() {
@@ -207,4 +210,18 @@ fn finish_child(child: &mut Child) {
     }
     let _ = child.kill();
     let _ = child.wait();
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn checks_chatgpt_and_legacy_codex_app_server_locations() {
+        assert_eq!(
+            super::OFFICIAL_APP_SERVER_EXECUTABLES,
+            &[
+                "/Applications/ChatGPT.app/Contents/Resources/codex",
+                "/Applications/Codex.app/Contents/Resources/codex",
+            ]
+        );
+    }
 }

@@ -5,7 +5,10 @@ use std::time::Duration;
 use crate::models::error::{AppError, AppResult};
 
 const CODEX_BUNDLE_ID: &str = "com.openai.codex";
-const CODEX_MAIN_EXECUTABLE: &str = "/Codex.app/Contents/MacOS/Codex";
+const CODEX_MAIN_EXECUTABLES: &[&str] = &[
+    "/ChatGPT.app/Contents/MacOS/ChatGPT",
+    "/Codex.app/Contents/MacOS/Codex",
+];
 const FORCE_QUIT_WAIT_ATTEMPTS: usize = 20;
 const OPEN_WAIT_ATTEMPTS: usize = 30;
 const QUIT_WAIT_INTERVAL: Duration = Duration::from_millis(150);
@@ -91,9 +94,9 @@ fn parse_codex_main_process_id(line: &str) -> Option<String> {
     let trimmed = line.trim_start();
     let (process_id, command) = trimmed.split_once(' ')?;
     let command = command.trim_start();
-    if command.ends_with(CODEX_MAIN_EXECUTABLE)
-        || command.contains(&format!("{CODEX_MAIN_EXECUTABLE} "))
-    {
+    if CODEX_MAIN_EXECUTABLES.iter().any(|executable| {
+        command.ends_with(executable) || command.contains(&format!("{executable} "))
+    }) {
         return Some(process_id.to_string());
     }
     None
@@ -230,6 +233,20 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn parses_codex_main_process_with_or_without_args() {
+        assert_eq!(
+            super::parse_codex_main_process_id(
+                "81234 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT"
+            )
+            .as_deref(),
+            Some("81234")
+        );
+        assert_eq!(
+            super::parse_codex_main_process_id(
+                "81235 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT --remote-debugging-port=53067"
+            )
+            .as_deref(),
+            Some("81235")
+        );
         assert_eq!(
             super::parse_codex_main_process_id(
                 "79496 /Applications/Codex.app/Contents/MacOS/Codex"
