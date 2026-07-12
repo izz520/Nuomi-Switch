@@ -141,6 +141,17 @@
   font-weight: var(--font-weight-extrabold);
 }
 
+.account-plan-default,
+.account-plan-free {
+  background: var(--glass-medium);
+  color: var(--color-text-muted);
+}
+
+.account-plan-k12 {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
 .account-plan-plus {
   background: var(--color-success);
   color: var(--color-on-primary);
@@ -152,13 +163,18 @@
 }
 
 .account-plan-pro {
-  background: var(--color-warning);
-  color: var(--color-on-primary);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .account-plan-api {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-active);
+  background: var(--color-blue-soft);
+  color: var(--color-blue);
+}
+
+.account-plan-pat {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .api-account-card .account-card-main {

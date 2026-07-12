@@ -150,8 +150,10 @@ function formatResetCreditExpiryParts(value?: number | null): { date: string; ti
   };
 }
 
-function getPlanTone(planType?: string | null): string {
-  const plan = planType?.toLowerCase() ?? '';
+type PlanTone = 'api' | 'default' | 'free' | 'k12' | 'pat' | 'plus' | 'pro' | 'team';
+
+function getPlanTone(planType?: string | null): PlanTone {
+  const plan = normalizePlanType(planType);
   if (plan.includes('pro')) {
     return 'pro';
   }
@@ -160,6 +162,12 @@ function getPlanTone(planType?: string | null): string {
   }
   if (plan.includes('plus')) {
     return 'plus';
+  }
+  if (plan.includes('k12')) {
+    return 'k12';
+  }
+  if (plan === 'free' || plan === '') {
+    return 'free';
   }
   return 'default';
 }
@@ -263,7 +271,11 @@ export function AccountRow({
   const weekly = account.quota?.weeklyRemainingPercent;
   const normalizedHourly = typeof hourly === 'number' ? Math.max(0, Math.min(100, hourly)) : 0;
   const normalizedWeekly = typeof weekly === 'number' ? Math.max(0, Math.min(100, weekly)) : 0;
-  const planTone = quotaUnsupported ? 'api' : getPlanTone(account.planType);
+  const planTone: PlanTone = isPersonalAccessToken
+    ? 'pat'
+    : account.authMode === 'api_key'
+      ? 'api'
+      : getPlanTone(account.planType);
   const canReauthenticate = canReauthenticateAccount(account);
   const hasQuotaError = !isPersonalAccessToken && account.quotaError !== null && account.quotaError !== undefined;
   const quotaErrorSummary = account.quotaError ? getQuotaErrorSummary(account.quotaError) : null;
@@ -296,7 +308,7 @@ export function AccountRow({
       <div className="account-card-main account-summary">
         <span className="account-card-header">
           <strong>{account.email ?? account.displayName}</strong>
-          <span className={`account-plan-badge account-plan-${planTone}`}>{planText}</span>
+          <span className={`account-plan-badge account-plan-${planTone}`}>{planText.toLocaleUpperCase()}</span>
         </span>
 
         {quotaUnsupported ? (
