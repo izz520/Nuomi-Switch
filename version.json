@@ -1,6 +1,6 @@
 {
-    "version": "0.2.6",
+    "version": "0.2.7",
     "releaseUrl": "https://github.com/izz520/Nuomi-Switch/releases",
-    "notes": "更新Codex支持Session登录,更新Claude自定义模型错误的问题，新增悬浮窗展示当前AI工作进度",
-    "publishedAt": "2026-07-02"
+    "notes": "更新扩展坞无法打开软件的bug,更改切换时关闭Codex为ChatGPT",
+    "publishedAt": "2026-07-12"
 }
